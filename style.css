@@ -1972,6 +1972,84 @@ body.terminal-mode .slideshow-controls {
     }
 }
 
+@media screen and (max-width: 900px) and (orientation: portrait) {
+    body {
+        width: 100vh; /* Make the body width the height of the viewport */
+        height: 100vw; /* Make the body height the width of the viewport */
+        transform: rotate(90deg); /* Rotate the entire body */
+        transform-origin: bottom left; /* Rotate around the bottom-left corner */
+        position: absolute;
+        top: 100%;
+        left: 0;
+        overflow-x: hidden; /* Hide horizontal overflow that results from rotation */
+        overflow-y: scroll; /* Allow vertical scrolling if content is tall */
+    }
+
+    /* Adjust specific elements if needed after global rotation */
+    main, footer,
+    .controls-above-fretboard,
+    .info-and-controls-below-fretboard,
+    #current-selection-display-wrapper,
+    #fretboard,
+    #fret-numbers-display,
+    #quiz-container,
+    .controls-grid-container,
+    .collapsible-section-wrapper,
+    .modal-content {
+        width: 100%; /* Ensure elements fill the new rotated width */
+        max-width: none; /* Remove max-width constraints if they cause issues */
+        margin: 0 auto; /* Center as much as possible */
+        padding: 0; /* Reset padding to prevent double padding after rotation */
+    }
+
+    /* Re-center the top display and remove the left padding that was based on fretboard */
+    #current-selection-display-wrapper,
+    #current-selection-display,
+    #current-selection-intervals,
+    #current-selection-notes,
+    .top-level-controls {
+        margin-left: 0;
+        text-align: center;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #fretboard, #fret-numbers-display {
+        margin-left: 0; /* Remove left padding from fretboard */
+        width: 95vw; /* Make fretboard use most of the *new* width */
+        height: 150px; /* Adjust height for landscape on what was portrait */
+    }
+
+    /* For inputs and select elements, make them slightly larger for touch */
+    select, input[type="number"], input[type="range"], input[type="color"] {
+        font-size: 1em;
+        padding: 8px 12px;
+    }
+
+    .quiz-option-btn, #next-question-btn, #stop-quiz-btn {
+        padding: 15px 30px;
+        font-size: 1.2em;
+    }
+
+    .slideshow-control-btn {
+        padding: 10px 15px;
+        font-size: 1em;
+    }
+
+    /* General padding adjustments for rotated view */
+    .collapsible-header,
+    .custom-slideshow-section,
+    .custom-colors-section,
+    .custom-fret-materials-section,
+    .slideshow-main-controls,
+    .slideshow-playback-controls,
+    .slideshow-info,
+    .string-controls,
+    .controls {
+        padding: 15px; /* Adjust padding after general layout changes */
+    }
+}
+
 footer {
     width: 100%;
     margin-top: 20px;
