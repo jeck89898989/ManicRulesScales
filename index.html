@@ -3,6 +3,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Guitar Fretboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "html2canvas": "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.esm.js"
+        }
+    }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -14,24 +22,68 @@
         <div id="current-selection-display-wrapper">
             <div id="current-selection-display">Ready to select a scale or chord</div>
             <span id="current-selection-intervals"></span>
-            <span id="current-selection-notes"></span>
+            <span id="current-selection-notes-enharmonic-sharp"></span>
+            <span id="current-selection-notes-enharmonic-flat"></span>
             <span id="slideshow-time-remaining"></span>
+            <span id="slideshow-item-description"></span>
         </div>
         <div class="controls-above-fretboard">
+            <div class="control-group">
+                <label for="instrument-select">Instrument & Tuning:</label>
+                <select id="instrument-select">
+                    <optgroup label="Guitars (6-String)">
+                        <option value="guitar-6-standard" selected>Standard (EADGBe)</option>
+                        <option value="guitar-6-drop-d">Drop D (DADGBe)</option>
+                        <option value="guitar-6-open-g">Open G (DGDGBd)</option>
+                        <option value="guitar-6-open-d">Open D (DADF#Ad)</option>
+                    </optgroup>
+                    <optgroup label="Guitars (7-String)">
+                        <option value="guitar-7-standard">Standard (BEADGBe)</option>
+                        <option value="guitar-7-drop-a">Drop A (AEADGBe)</option>
+                    </optgroup>
+                    <optgroup label="Basses (4-String)">
+                        <option value="bass-4-standard">Standard (EADG)</option>
+                        <option value="bass-4-drop-d">Drop D (DADG)</option>
+                    </optgroup>
+                    <optgroup label="Basses (5-String)">
+                        <option value="bass-5-standard">Standard (BEADG)</option>
+                        <option value="bass-5-double-bass">Double Bass (EADG)</option>
+                    </optgroup>
+                    <optgroup label="European Bowed Strings">
+                        <option value="violin">Violin (GDAE)</option>
+                        <option value="viola">Viola (CGDA)</option>
+                        <option value="cello">Cello (CGDA)</option>
+                        <option value="viol-6-string">Viol, 6-String (DGCFAd)</option>
+                    </optgroup>
+                    <optgroup label="Folk & World Instruments">
+                        <option value="banjo-tenor-jazz">Banjo, Tenor - Jazz (CGDA)</option>
+                        <option value="banjo-tenor-irish">Banjo, Tenor - Irish (GDAE)</option>
+                        <option value="banjo-plectrum">Banjo, Plectrum (CGBD)</option>
+                        <option value="ukulele-soprano">Ukulele, Soprano (GCEA)</option>
+                        <option value="cavaquinho-standard">Cavaquinho (DGBD)</option>
+                        <option value="irish-fiddle">Irish Fiddle (GDAE)</option>
+                        <option value="hardanger-fiddle">Hardanger Fiddle (ADAE)</option>
+                        <option value="nyckelharpa">Nyckelharpa (CGDA)</option>
+                        <option value="erhu">Erhu (DA)</option>
+                        <option value="shamisen">Shamisen (CGC)</option>
+                        <option value="morin-khuur">Morin Khuur (CG)</option>
+                    </optgroup>
+                </select>
+            </div>
             <div class="control-group">
                 <label for="key-select">Key:</label>
                 <select id="key-select">
                     <option value="C">C</option>
-                    <option value="C#">C#</option>
+                    <option value="C#">C#/Db</option>
                     <option value="D">D</option>
-                    <option value="D#">D#</option>
+                    <option value="D#">D#/Eb</option>
                     <option value="E">E</option>
                     <option value="F">F</option>
-                    <option value="F#">F#</option>
+                    <option value="F#">F#/Gb</option>
                     <option value="G">G</option>
-                    <option value="G#">G#</option>
+                    <option value="G#">G#/Ab</option>
                     <option value="A">A</option>
-                    <option value="A#">A#</option>
+                    <option value="A#">A#/Bb</option>
                     <option value="B">B</option>
                 </select>
             </div>
@@ -39,115 +91,27 @@
                 <label for="scale-select">Scale:</label>
                 <select id="scale-select">
                     <option value="" selected disabled>Select a Scale</option>
-                    <option value="chromatic">All Notes</option>
-                    <optgroup label="Scales">
+                    <option value="chromatic">All Notes (Chromatic)</option>
+                    <optgroup label="Common Scales &amp; Modes">
                         <option value="major">Major</option>
                         <option value="minor">Natural Minor</option>
-                        <option value="pentatonic-major">Pentatonic Major</option>
-                        <option value="pentatonic-minor">Pentatonic Minor</option>
-                        <option value="blues">Blues</option>
+                        <option value="ionian">Ionian (Major)</option>
                         <option value="dorian">Dorian</option>
-                        <option value="mixolydian">Mixolydian</option>
                         <option value="phrygian">Phrygian</option>
                         <option value="lydian">Lydian</option>
+                        <option value="mixolydian">Mixolydian</option>
+                        <option value="aeolian">Aeolian (Natural Minor)</option>
                         <option value="locrian">Locrian</option>
-                        <option value="harmonic-minor">Harmonic Minor</option>
-                        <option value="melodic-minor">Melodic Minor</option>
-                        <option value="whole-tone">Whole Tone</option>
-                        <option value="diminished">Diminished Scale</option>
-                        <option value="ionian">Ionian</option>
-                        <option value="aeolian">Aeolian</option>
-                        <option value="hungarian-minor">Hungarian Minor</option>
-                        <option value="neapolitan-minor">Neapolitan Minor</option>
-                        <option value="neapolitan-major">Neapolitan Major</option>
-                        <option value="persian">Persian</option>
-                        <option value="enigmatic">Enigmatic</option>
-                        <option value="double-harmonic-major">Double Harmonic Major</option>
-                        <option value="byzantine">Byzantine</option>
-                        <option value="arabic">Arabic</option>
+                        <option value="major-minor-scale">Major Minor Scale</option>
+                    </optgroup>
+                    <optgroup label="Pentatonic Scales">
+                        <option value="pentatonic-major">Pentatonic Major</option>
+                        <option value="pentatonic-minor">Pentatonic Minor</option>
+                        <option value="egyptian">Egyptian</option>
                         <option value="hirajoshi">Hirajoshi (Japanese)</option>
-                        <option value="pentatonic-blues">Pentatonic Blues</option>
-                        <option value="minor-blues">Minor Blues</option>
-                        <option value="gypsy">Gypsy</option>
-                        <option value="altered">Altered Scale</option>
-                        <option value="spanish-phrygian">Spanish Phrygian</option>
-                        <option value="jewish-ahava-rabbah">Jewish Ahava Rabbah</option>
                         <option value="japanese-in-sen">Japanese In Sen</option>
                         <option value="chinese-pentatonic">Chinese Pentatonic</option>
                         <option value="mongolian">Mongolian</option>
-                        <option value="indian-raga-bhairav">Indian Raga Bhairav</option>
-                        <option value="indian-raga-yaman">Indian Raga Yaman</option>
-                        <option value="greek-dorian">Greek Dorian</option>
-                        <option value="prometheus">Prometheus</option>
-                        <option value="tritone-scale">Tritone Scale</option>
-                        <option value="augmented-scale">Augmented Scale</option>
-                        <option value="bebop-dominant">Bebop Dominant</option>
-                        <option value="bebop-major">Bebop Major</option>
-                        <option value="bebop-minor">Bebop Minor</option>
-                        <option value="half-whole-diminished">Half-Whole Diminished</option>
-                        <option value="whole-half-diminished">Whole-Half Diminished</option>
-                        <option value="lydian-dominant">Lydian Dominant</option>
-                        <option value="super-locrian">Super Locrian</option>
-                        <option value="mixolydian-b6">Mixolydian ♭6</option>
-                        <option value="dorian-b2">Dorian ♭2</option>
-                        <option value="phrygian-dominant">Phrygian Dominant</option>
-                        <option value="harmonic-major">Harmonic Major</option>
-                        <option value="double-harmonic-minor">Double Harmonic Minor</option>
-                        <option value="hungarian-major">Hungarian Major</option>
-                        <option value="romanian-minor">Romanian Minor</option>
-                        <option value="ukrainian-dorian">Ukrainian Dorian</option>
-                        <option value="flamenco">Flamenco</option>
-                        <option value="andalusian">Andalusian</option>
-                        <option value="maqam-hijaz">Maqam Hijaz</option>
-                        <option value="maqam-kurd">Maqam Kurd</option>
-                        <option value="overtone-scale">Overtone Scale</option>
-                        <option value="scriabin-mystic">Scriabin Mystic</option>
-                        <option value="petrushka-chord">Petrushka Chord</option>
-                        <option value="octatonic">Octatonic</option>
-                        <option value="balinese-pelog">Balinese Pelog</option>
-                        <option value="javanese-slendro">Javanese Slendro</option>
-                        <option value="egyptian">Egyptian</option>
-                        <option value="ethiopian">Ethiopian</option>
-                        <option value="jewish-minor">Jewish Minor</option>
-                        <option value="klezmer">Klezmer</option>
-                        <option value="todi-raga">Todi Raga</option>
-                        <option value="marva-raga">Marva Raga</option>
-                        <option value="purvi-raga">Purvi Raga</option>
-                    </optgroup>
-                    <optgroup label="More Scales">
-                        <option value="lydian-augmented">Lydian Augmented</option>
-                        <option value="dorian-sharp-11">Dorian #11</option>
-                        <option value="phrygian-sharp-3">Phrygian #3</option>
-                        <option value="locrian-natural-6">Locrian Natural 6</option>
-                        <option value="leading-whole-tone">Leading Whole Tone</option>
-                        <option value="blues-major-scale">Blues Major</option>
-                        <option value="chromatic-blues-scale">Chromatic Blues</option>
-                        <option value="prometheus-neapolitan">Prometheus Neapolitan</option>
-                        <option value="eight-tone-spanish">Eight-Tone Spanish</option>
-                        <option value="enigmatic-minor">Enigmatic Minor</option>
-                        <option value="oriental-scale">Oriental Scale</option>
-                        <option value="flamenco-minor">Flamenco Minor</option>
-                        <option value="hindu">Hindu</option>
-                        <option value="jazz-phrygian">Jazz Phrygian</option>
-                        <option value="gamelan">Gamelan</option>
-                        <option value="super-phrygian">Super Phrygian</option>
-                        <option value="enigmatic-diminished">Enigmatic Diminished</option>
-                        <option value="harmonic-augmented">Harmonic Augmented</option>
-                        <option value="mixolydian-augmented">Mixolydian Augmented</option>
-                        <option value="phrygian-mixolydian">Phrygian Mixolydian</option>
-                        <option value="lydian-diminished">Lydian Diminished</option>
-                        <option value="ultraphrygian">Ultraphrygian</option>
-                        <option value="half-diminished-bebop">Half Diminished Bebop</option>
-                        <option value="major-locrian-scale">Major Locrian</option>
-                        <option value="minor-neapolitan-alt">Minor Neapolitan Alt</option>
-                        <option value="major-neapolitan-alt">Major Neapolitan Alt</option>
-                        <option value="double-chromatic">Double Chromatic</option>
-                        <option value="gregorian-major">Gregorian Major</option>
-                        <option value="gregorian-minor">Gregorian Minor</option>
-                        <option value="blues-dorian">Blues Dorian</option>
-                        <option value="blues-mixolydian">Blues Mixolydian</option>
-                        <option value="blues-phrygian">Blues Phrygian</option>
-                        <option value="diminished-blues">Diminished Blues</option>
                         <option value="major-pentatonic-add-4">Major Pentatonic Add 4</option>
                         <option value="minor-pentatonic-add-2">Minor Pentatonic Add 2</option>
                         <option value="augmented-pentatonic">Augmented Pentatonic</option>
@@ -159,39 +123,123 @@
                         <option value="locrian-pentatonic">Locrian Pentatonic</option>
                         <option value="harmonic-minor-pentatonic">Harmonic Minor Pentatonic</option>
                         <option value="melodic-minor-pentatonic">Melodic Minor Pentatonic</option>
-                        <option value="bebop-dominant-alt">Bebop Dominant Alt</option>
-                        <option value="bebop-major-alt">Bebop Major Alt</option>
-                        <option value="bebop-minor-alt">Bebop Minor Alt</option>
+                        <option value="tritone-pentatonic">Tritone Pentatonic</option>
+                        <option value="pentatonic-hybrid">Pentatonic Hybrid</option>
+                    </optgroup>
+                    <optgroup label="Blues Scales">
+                        <option value="blues">Blues</option>
+                        <option value="minor-blues">Minor Blues</option>
+                        <option value="pentatonic-blues">Pentatonic Blues</option>
+                        <option value="blues-major-scale">Blues Major</option>
+                        <option value="blues-dorian">Blues Dorian</option>
+                        <option value="blues-mixolydian">Blues Mixolydian</option>
+                        <option value="blues-phrygian">Blues Phrygian</option>
+                        <option value="diminished-blues">Diminished Blues</option>
+                        <option value="chromatic-blues-scale">Chromatic Blues</option>
+                    </optgroup>
+                    <optgroup label="Harmonic &amp; Melodic Scales">
+                        <option value="harmonic-minor">Harmonic Minor</option>
+                        <option value="melodic-minor">Melodic Minor</option>
+                        <option value="harmonic-major">Harmonic Major</option>
+                        <option value="double-harmonic-major">Double Harmonic Major (Byzantine)</option>
+                        <option value="double-harmonic-minor">Double Harmonic Minor</option>
+                    </optgroup>
+                    <optgroup label="Symmetrical &amp; Atonal Scales">
+                        <option value="whole-tone">Whole Tone</option>
+                        <option value="diminished">Diminished (W-H)</option>
+                        <option value="half-whole-diminished">Diminished (H-W)</option>
+                        <option value="whole-half-diminished">Diminished (W-H)</option>
+                        <option value="octatonic">Octatonic</option>
+                        <option value="augmented-scale">Augmented Scale</option>
+                        <option value="tritone-scale">Tritone Scale</option>
+                        <option value="prometheus">Prometheus</option>
+                        <option value="enigmatic">Enigmatic</option>
+                        <option value="altered">Altered Scale (Super Locrian)</option>
+                        <option value="scriabin-mystic">Scriabin Mystic</option>
+                    </optgroup>
+                    <optgroup label="Bebop Scales">
+                        <option value="bebop-dominant">Bebop Dominant</option>
+                        <option value="bebop-major">Bebop Major</option>
+                        <option value="bebop-minor">Bebop Minor</option>
                         <option value="blues-bebop">Blues Bebop</option>
                         <option value="dorian-bebop">Dorian Bebop</option>
                         <option value="lydian-bebop">Lydian Bebop</option>
-                        <option value="mixolydian-bebop-alt">Mixolydian Bebop Alt</option>
                         <option value="phrygian-bebop">Phrygian Bebop</option>
                         <option value="harmonic-minor-bebop">Harmonic Minor Bebop</option>
                         <option value="melodic-minor-bebop">Melodic Minor Bebop</option>
                         <option value="whole-tone-bebop">Whole Tone Bebop</option>
                         <option value="diminished-bebop">Diminished Bebop</option>
-                        <option value="tritone-pentatonic">Tritone Pentatonic</option>
-                        <option value="augmented-diminished">Augmented Diminished</option>
-                        <option value="lydian-phrygian">Lydian Phrygian</option>
-                        <option value="mixolydian-lydian">Mixolydian Lydian</option>
-                        <option value="phrygian-locrian">Phrygian Locrian</option>
-                        <option value="ionian-flat-5">Ionian Flat 5</option>
-                        <option value="aeolian-sharp-7">Aeolian Sharp 7</option>
-                        <option value="dorian-flat-4">Dorian Flat 4</option>
-                        <option value="lydian-flat-2">Lydian Flat 2</option>
-                        <option value="mixolydian-sharp-5">Mixolydian Sharp 5</option>
-                        <option value="locrian-sharp-4">Locrian Sharp 4</option>
-                        <option value="major-minor-scale">Major Minor Scale</option>
-                        <option value="persian-augmented">Persian Augmented</option>
-                        <option value="romanian-major">Romanian Major</option>
-                        <option value="ukrainian-major">Ukrainian Major</option>
-                        <option value="hungarian-major-alt">Hungarian Major Alt</option>
-                        <option value="enigmatic-harmonic">Enigmatic Harmonic</option>
-                        <option value="whole-tone-major">Whole Tone Major</option>
-                        <option value="diminished-major">Diminished Major Scale</option>
-                        <option value="chromatic-minor">Chromatic Minor</option>
-                        <option value="pentatonic-hybrid">Pentatonic Hybrid</option>
+                        <option value="bebop-dominant-alt">Bebop Dominant Alt</option>
+                        <option value="bebop-major-alt">Bebop Major Alt</option>
+                        <option value="bebop-minor-alt">Bebop Minor Alt</option>
+                        <option value="mixolydian-bebop-alt">Mixolydian Bebop Alt</option>
+                    </optgroup>
+                    <optgroup label="World &amp; Folk Scales">
+                        <option value="persian">Persian</option>
+                        <option value="arabic">Arabic</option>
+                        <option value="byzantine">Byzantine</option>
+                        <option value="phrygian-dominant">Phrygian Dominant</option>
+                        <option value="spanish-phrygian">Spanish Phrygian (Jewish)</option>
+                        <option value="flamenco">Flamenco</option>
+                        <option value="andalusian">Andalusian</option>
+                        <option value="gypsy">Gypsy</option>
+                        <option value="hungarian-minor">Hungarian Minor</option>
+                        <option value="hungarian-major">Hungarian Major</option>
+                        <option value="romanian-minor">Romanian Minor</option>
+                        <option value="ukrainian-dorian">Ukrainian Dorian (Mishra Bhairavi)</option>
+                        <option value="neapolitan-minor">Neapolitan Minor</option>
+                        <option value="neapolitan-major">Neapolitan Major</option>
+                        <option value="maqam-hijaz">Maqam Hijaz</option>
+                        <option value="maqam-kurd">Maqam Kurd</option>
+                        <option value="indian-raga-bhairav">Indian Raga Bhairav</option>
+                        <option value="indian-raga-yaman">Indian Raga Yaman</option>
+                        <option value="todi-raga">Todi Raga</option>
+                        <option value="marva-raga">Marva Raga</option>
+                        <option value="purvi-raga">Purvi Raga</option>
+                    </optgroup>
+                    <optgroup label="Modal Variations &amp; Exotic Scales">
+                        <option value="lydian-dominant">Lydian Dominant (Overtone)</option>
+                        <option value="lydian-augmented">Lydian Augmented</option>
+                        <option value="dorian-b2">Dorian ♭2 (Phrygian #6)</option>
+                        <option value="mixolydian-b6">Mixolydian ♭6</option>
+                        <option value="super-locrian">Super Locrian (Altered)</option>
+                        <option value="locrian-natural-6">Locrian Natural 6</option>
+                        <option value="prometheus-neapolitan">Prometheus Neapolitan</option>
+                        <option value="eight-tone-spanish">Eight-Tone Spanish</option>
+                        <option value="oriental-scale">Oriental Scale</option>
+                        <option value="hindu">Hindu</option>
+                        <option value="ultraphrygian">Ultraphrygian</option>
+                        <option value="major-locrian-scale">Major Locrian</option>
+                    </optgroup>
+                    <optgroup label="Chords (Triads &amp; 7ths)">
+                        <option value="major-triad">Major Triad</option>
+                        <option value="minor-triad">Minor Triad</option>
+                        <option value="diminished">Diminished Triad</option>
+                        <option value="augmented">Augmented Triad</option>
+                        <option value="sus2">Sus2</option>
+                        <option value="sus4">Sus4</option>
+                        <option value="dom7">Dominant 7th</option>
+                        <option value="maj7">Major 7th</option>
+                        <option value="min7">Minor 7th</option>
+                        <option value="min-maj7">Minor-Major 7th</option>
+                        <option value="dim7">Diminished 7th</option>
+                        <option value="half-dim7">Half-Diminished 7th</option>
+                        <option value="7b5">Dominant 7th ♭5</option>
+                    </optgroup>
+                    <optgroup label="Chords (Extensions &amp; Alterations)">
+                        <option value="6">Major 6th</option>
+                        <option value="m6">Minor 6th</option>
+                        <option value="add9">Add9</option>
+                        <option value="add11">Add11</option>
+                        <option value="9">Dominant 9th</option>
+                        <option value="m9">Minor 9th</option>
+                        <option value="maj9">Major 9th</option>
+                        <option value="11">Dominant 11th</option>
+                        <option value="m11">Minor 11th</option>
+                        <option value="maj11">Major 11th</option>
+                        <option value="13">Dominant 13th</option>
+                        <option value="m13">Minor 13th</option>
+                        <option value="maj13">Major 13th</option>
                     </optgroup>
                     <optgroup label="Intervals">
                         <option value="unison">Unison</option>
@@ -208,42 +256,106 @@
                         <option value="major-7th">Major 7th</option>
                         <option value="octave">Octave</option>
                     </optgroup>
-                    <optgroup label="Chords">
-                        <option value="major-triad">Major Triad</option>
-                        <option value="minor-triad">Minor Triad</option>
-                        <option value="diminished">Diminished</option>
-                        <option value="augmented">Augmented</option>
-                        <option value="sus2">Sus2</option>
-                        <option value="sus4">Sus4</option>
-                        <option value="dom7">Dominant 7th</option>
-                        <option value="maj7">Major 7th</option>
-                        <option value="min7">Minor 7th</option>
-                        <option value="min-maj7">Minor Major 7th</option>
-                        <option value="dim7">Diminished 7th</option>
-                        <option value="half-dim7">Half Diminished 7th</option>
-                        <option value="add9">Add9</option>
-                        <option value="add11">Add11</option>
-                        <option value="6">Major 6th</option>
-                        <option value="m6">Minor 6th</option>
-                        <option value="9">Dominant 9th</option>
-                        <option value="m9">Minor 9th</option>
-                        <option value="maj9">Major 9th</option>
-                        <option value="11">Dominant 11th</option>
-                        <option value="m11">Minor 11th</option>
-                        <option value="maj11">Major 11th</option>
-                        <option value="13">Dominant 13th</option>
-                        <option value="m13">Minor 13th</option>
-                        <option value="maj13">Major 13th</option>
-                        <option value="7b5">7♭5</option>
-                    </optgroup>
                 </select>
             </div>
             <div class="control-group">
                 <label for="note-display-type">Note Display:</label>
                 <select id="note-display-type">
-                    <option value="note-names">Note Names</option>
-                    <option value="intervals">Interval Names</option>
+                    <option value="intervals" selected>Interval Names</option>
+                    <option value="note-names">Note Names (Mixed)</option>
+                    <option value="note-names-sharp">Note Names (#)</option>
+                    <option value="note-names-flat">Note Names (b)</option>
                     <option value="solfege">Solfege</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="fretboard-view-select">Fretboard View:</label>
+                <select id="fretboard-view-select">
+                    <option value="full-fretboard" selected>Full Fretboard</option>
+                    <optgroup label="Fret Ranges">
+                        <option value="frets-0-4">Frets 0-4</option>
+                        <option value="frets-0-6">Frets 0-6</option>
+                        <option value="frets-2-8">Frets 2-8</option>
+                        <option value="frets-3-9">Frets 3-9</option>
+                        <option value="frets-5-11">Frets 5-11</option>
+                        <option value="frets-7-13">Frets 7-13</option>
+                        <option value="frets-9-15">Frets 9-15</option>
+                        <option value="frets-11-15">Frets 11-15</option>
+                    </optgroup>
+                    <optgroup label="Single Strings">
+                        <option value="string-6">6th String (Low E)</option>
+                        <option value="string-5">5th String (A)</option>
+                        <option value="string-4">4th String (D)</option>
+                        <option value="string-3">3rd String (G)</option>
+                        <option value="string-2">2nd String (B)</option>
+                        <option value="string-1">1st String (High E)</option>
+                    </optgroup>
+                    <optgroup label="String Groups">
+                        <option value="strings-123">Strings 1, 2, 3</option>
+                        <option value="strings-234">Strings 2, 3, 4</option>
+                        <option value="strings-345">Strings 3, 4, 5</option>
+                        <option value="strings-456">Strings 4, 5, 6</option>
+                        <option value="strings-1234">Strings 1, 2, 3, 4</option>
+                        <option value="strings-2345">Strings 2, 3, 4, 5</option>
+                        <option value="strings-3456">Strings 3, 4, 5, 6</option>
+                        <option value="strings-1236">Strings 1, 2, 3, 6</option>
+                        <option value="strings-1235">Strings 1, 2, 3, 5</option>
+                        <option value="strings-1456">Strings 1, 4, 5, 6</option>
+                        <option value="strings-1345">Strings 1, 3, 4, 5</option>
+                        <option value="strings-2456">Strings 2, 4, 5, 6</option>
+                        <option value="strings-134">Strings 1, 3, 4</option>
+                        <option value="strings-125">Strings 1, 2, 5</option>
+                        <option value="strings-346">Strings 3, 4, 6</option>
+                    </optgroup>
+                    <optgroup label="2 String Groups">
+                        <option value="strings-12">Strings 1, 2</option>
+                        <option value="strings-13">Strings 1, 3</option>
+                        <option value="strings-14">Strings 1, 4</option>
+                        <option value="strings-15">Strings 1, 5</option>
+                        <option value="strings-16">Strings 1, 6</option>
+                        <option value="strings-23">Strings 2, 3</option>
+                        <option value="strings-24">Strings 2, 4</option>
+                        <option value="strings-25">Strings 2, 5</option>
+                        <option value="strings-26">Strings 2, 6</option>
+                        <option value="strings-34">Strings 3, 4</option>
+                        <option value="strings-35">Strings 3, 5</option>
+                        <option value="strings-36">Strings 3, 6</option>
+                        <option value="strings-45">Strings 4, 5</option>
+                        <option value="strings-46">Strings 4, 6</option>
+                        <option value="strings-56">Strings 5, 6</option>
+                    </optgroup>
+                    <optgroup label="3 String Groups">
+                        <option value="strings-124">Strings 1, 2, 4</option>
+                        <option value="strings-126">Strings 1, 2, 6</option>
+                        <option value="strings-135">Strings 1, 3, 5</option>
+                        <option value="strings-136">Strings 1, 3, 6</option>
+                        <option value="strings-145">Strings 1, 4, 5</option>
+                        <option value="strings-146">Strings 1, 4, 6</option>
+                        <option value="strings-156">Strings 1, 5, 6</option>
+                        <option value="strings-235">Strings 2, 3, 5</option>
+                        <option value="strings-236">Strings 2, 3, 6</option>
+                        <option value="strings-245">Strings 2, 4, 5</option>
+                        <option value="strings-246">Strings 2, 4, 6</option>
+                        <option value="strings-256">Strings 2, 5, 6</option>
+                        <option value="strings-356">Strings 3, 5, 6</option>
+                    </optgroup>
+                    <optgroup label="4 String Groups">
+                        <option value="strings-1245">Strings 1, 2, 4, 5</option>
+                        <option value="strings-1246">Strings 1, 2, 4, 6</option>
+                        <option value="strings-1256">Strings 1, 2, 5, 6</option>
+                        <option value="strings-1346">Strings 1, 3, 4, 6</option>
+                        <option value="strings-1356">Strings 1, 3, 5, 6</option>
+                        <option value="strings-2346">Strings 2, 3, 4, 6</option>
+                        <option value="strings-2356">Strings 2, 3, 5, 6</option>
+                    </optgroup>
+                    <optgroup label="5 String Groups">
+                        <option value="strings-12345">Strings 1, 2, 3, 4, 5</option>
+                        <option value="strings-12346">Strings 1, 2, 3, 4, 6</option>
+                        <option value="strings-12356">Strings 1, 2, 3, 5, 6</option>
+                        <option value="strings-12456">Strings 1, 2, 4, 5, 6</option>
+                        <option value="strings-13456">Strings 1, 3, 4, 5, 6</option>
+                        <option value="strings-23456">Strings 2, 3, 4, 5, 6</option>
+                    </optgroup>
                 </select>
             </div>
             <div class="control-group control-group-horizontal">
@@ -273,7 +385,7 @@
                         <option value="heart-and-soul">Heart and Soul</option>
                         <option value="take-five">Take Five</option>
                     </optgroup>
-                    <optgroup label="Scale & Mode Collections">
+                    <optgroup label="Scale & Mode Collections" >
                         <option value="jazz-progressions">Jazz Progressions</option>
                         <option value="blues-journey">Blues Journey</option>
                         <option value="classical-modes">Classical Modes</option>
@@ -312,13 +424,18 @@
                         <option value="ambient-textural">Ambient & Textural</option>
                         <option value="bebop-language">Bebop Language</option>
                     </optgroup>
+                    <optgroup label="Custom Slideshows" id="custom-slideshows-optgroup"></optgroup>
                 </select>
+                <div class="control-group">
+                    <label for="slideshow-base-key">Base Key:</label>
+                    <input type="text" id="slideshow-base-key" readonly>
+                </div>
                 <button id="slideshow-play" class="slideshow-control-btn">▶</button>
                 <button id="slideshow-stop" class="slideshow-control-btn">⏹</button>
 
                 <div class="control-group">
                     <label for="slideshow-bpm">BPM:</label>
-                    <input type="number" id="slideshow-bpm" min="30" max="300" value="120">
+                    <input type="number" id="slideshow-bpm" min="30" max="300" value="60">
                 </div>
                 <div class="control-group">
                     <label for="slideshow-transpose">Transpose (semitones):</label>
@@ -328,6 +445,9 @@
         </div>
         <div id="fretboard"></div>
         <div id="fret-numbers-display"></div>
+        <div id="export-status-overlay" class="hidden">
+            <div id="export-status-message"></div>
+        </div>
 
         <div class="info-and-controls-below-fretboard">
             <div class="selection-display-and-button">
@@ -342,73 +462,101 @@
                         </select>
                     </div>
                     <div class="control-group">
-                        <label for="slideshow-select" style="display: none;">Slideshow:</label>
-                        <select id="slideshow-select-hidden-main" style="display: none;">
-                            <option value="">No Slideshow</option>
-                            <option value="default-imported-slideshow">My Imported Slideshow</option>
-                            <optgroup label="Chord Progressions">
-                                <option value="pop-progression">Pop Progression (I-V-vi-IV)</option>
-                                <option value="jazz-progression">Jazz Progression (ii-V-I)</option>
-                                <option value="12-bar-blues">12-Bar Blues</option>
-                                <option value="circle-of-fifths">Circle of Fifths</option>
-                                <option value="andalusian-cadence">Andalusian Cadence</option>
-                                <option value="50s-progression">50s Progression (I-vi-IV-V)</option>
-                                <option value="pachelbels-canon">Pachelbel's Canon</option>
-                                <option value="minor-pop-rock">Minor Key Pop/Rock (i-VI-III-VII)</option>
-                                <option value="creep-progression">Creep Progression (I-III-IV-iv)</option>
-                                <option value="hotel-california-verse">Hotel California Verse</option>
-                                <option value="la-folia">La Folia</option>
-                                <option value="montgomery-ward">Montgomery-Ward Bridge</option>
-                                <option value="ragtime-progression">Ragtime Progression</option>
-                                <option value="flamenco-progression">Flamenco Progression</option>
-                                <option value="cry-me-a-river">Cry Me a River</option>
-                                <option value="a-day-in-the-life">A Day in the Life</option>
-                                <option value="all-the-things-you-are">All The Things You Are</option>
-                                <option value="stairway-to-heaven">Stairway to Heaven</option>
-                                <option value="heart-and-soul">Heart and Soul</option>
-                                <option value="take-five">Take Five</option>
+                        <label for="page-theme-select">Page Theme:</label>
+                        <select id="page-theme-select">
+                            <option value="dark-mode">Dark</option>
+                            <option value="light-mode">Light</option>
+                            <option value="sepia-mode" selected>Sepia (Default)</option>
+                            <option value="slate-mode">Slate</option>
+                            <option value="terminal-mode">Terminal</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="note-color-preset">Note Colors:</label>
+                        <select id="note-color-preset">
+                            <option value="default">Default Blue/Green</option>
+                            <option value="sunset">Sunset (Orange/Red)</option>
+                            <option value="ocean">Ocean (Teal/Navy)</option>
+                            <option value="forest">Forest (Green/Brown)</option>
+                            <option value="royal">Royal (Purple/Gold)</option>
+                            <option value="fire">Fire (Red/Yellow)</option>
+                            <option value="ice">Ice (Light Blue/White)</option>
+                            <option value="galaxy">Galaxy (Purple/Pink)</option>
+                            <option value="earth">Earth (Brown/Tan)</option>
+                            <option value="neon">Neon (Bright Green/Pink)</option>
+                            <optgroup label="Monochromatic">
+                                <option value="mono-gray">Gray Scale</option>
+                                <option value="mono-blue">Blue Monochrome</option>
+                                <option value="mono-red">Red Monochrome</option>
+                                <option value="mono-green">Green Monochrome</option>
+                                <option value="mono-purple">Purple Monochrome</option>
                             </optgroup>
-                            <optgroup label="Scale & Mode Collections">
-                                <option value="jazz-progressions">Jazz Progressions</option>
-                                <option value="blues-journey">Blues Journey</option>
-                                <option value="classical-modes">Classical Modes</option>
-                                <option value="rock-pop">Rock & Pop</option>
-                                <option value="latin-rhythms">Latin Rhythms</option>
-                                <option value="celtic-scales">Celtic Scales</option>
-                                <option value="eastern-scales">Eastern Scales</option>
-                                <option value="modern-jazz">Modern Jazz</option>
-                                <option value="folk-traditions">Folk Traditions</option>
-                                <option value="bebop-essentials">Bebop Essentials</option>
-                                <option value="fusion-elements">Fusion Elements</option>
-                                <option value="gospel-soul">Gospel & Soul</option>
-                                <option value="country-western">Country & Western</option>
-                                <option value="mediterranean">Mediterranean</option>
-                                <option value="pentatonic-world">Pentatonic World</option>
-                                <option value="chromatic-journey">Chromatic Journey</option>
-                                <option value="harmonic-minor-family">Harmonic Minor Family</option>
-                                <option value="melodic-minor-family">Melodic Minor Family</option>
-                                <option value="diminished-concepts">Diminished Concepts</option>
-                                <option value="whole-tone-world">Whole Tone World</option>
-                            </optgroup>
-                            <optgroup label="Chord & Scale Pairings">
-                                <option value="jazz-standards-starter">Jazz Standards Starter</option>
-                                <option value="blues-improvisation-toolkit">Blues Improvisation Toolkit</option>
-                                <option value="modal-jazz-explorer">Modal Jazz Explorer</option>
-                                <option value="rock-riffage">Rock Riffage</option>
-                                <option value="funk-groove">Funk & Groove</option>
-                                <option value="neo-soul-flavors">Neo-Soul Flavors</option>
-                                <option value="folk-acoustic-strummer">Folk & Acoustic Strummer</option>
-                                <option value="metal-mayhem">Metal Mayhem</option>
-                                <option value="bossa-nova-moods">Bossa Nova Moods</option>
-                                <option value="country-twang">Country Twang</option>
-                                <option value="cinematic-soundscapes">Cinematic Soundscapes</option>
-                                <option value="gospel-harmonies">Gospel Harmonies</option>
-                                <option value="reggae-rhythms">Reggae Rhythms</option>
-                                <option value="ambient-textural">Ambient & Textural</option>
-                                <option value="bebop-language">Bebop Language</option>
+                            <optgroup label="Chromatic (Each Note Different)">
+                                <option value="chromatic-rainbow">Rainbow Spectrum</option>
+                                <option value="chromatic-pastel">Pastel Spectrum</option>
+                                <option value="chromatic-dark">Dark Spectrum</option>
+                                <option value="chromatic-warm">Warm Tones</option>
+                                <option value="chromatic-cool">Cool Tones</option>
+                                <option value="chromatic-neon">Neon Spectrum</option>
+                                <option value="chromatic-metal">Metal Tones</option>
+                                <option value="chromatic-sunset" selected>Sunset Spectrum</option>
+                                <option value="chromatic-ocean">Ocean Spectrum</option>
+                                <option value="chromatic-forest">Forest Spectrum</option>
+                                <option value="chromatic-jewel">Jewel Tones</option>
+                                <option value="chromatic-fire">Fire Spectrum</option>
+                                <option value="chromatic-candy">Candy Colors</option>
+                                <option value="chromatic-earth">Earth Spectrum</option>
+                                <option value="chromatic-cosmic">Cosmic Spectrum</option>
+                                <option value="chromatic-galaxy">Galaxy Spectrum</option>
+                                <option value="chromatic-tropical">Tropical Paradise</option>
+                                <option value="chromatic-cyberpunk">Cyberpunk City</option>
+                                <option value="chromatic-vintage">Vintage Vibes</option>
+                                <option value="chromatic-desert">Desert Sunset</option>
+                                <option value="chromatic-aurora">Aurora Borealis</option>
+                                <option value="chromatic-deep-sea">Deep Sea</option>
+                                <option value="chromatic-autumn">Autumn Leaves</option>
+                                <option value="chromatic-spring">Spring Bloom</option>
+                                <option value="chromatic-volcanic">Volcanic Eruption</option>
+                                <option value="chromatic-arctic">Arctic Ice</option>
                             </optgroup>
                         </select>
                     </div>
+                    <div class="control-group">
+                        <label for="fretboard-material-select">Fretboard Material:</label>
+                        <select id="fretboard-material-select">
+                            <option value="/fretboard-rosewood.png" selected>Rosewood</option>
+                            <option value="/fretboard-maple.png">Maple</option>
+                            <option value="/fretboard-ebony.png">Ebony</option>
+                            <option value="/fretboard-mahogany.png">Mahogany</option>
+                            <option value="/fretboard-walnut.png">Walnut</option>
+                            <option value="/fretboard-pau-ferro.png">Pau Ferro</option>
+                            <option value="/fretboard-koa.png">Koa</option>
+                            <option value="/fretboard-wenge.png">Wenge</option>
+                            <option value="/fretboard-ziricote.png">Ziricote</option>
+                            <option value="/fretboard-bocote.png">Bocote</option>
+                            <option value="/fretboard-bubinga.png">Bubinga</option>
+                            <option value="/fretboard-zebrawood.png">Zebrawood</option>
+                            <option value="/fretboard-snakewood.png">Snakewood</option>
+                            <optgroup label="Non-Wood">
+                                <option value="/fretboard-steel.png">Steel</option>
+                                <option value="/fretboard-aluminum.png">Aluminum</option>
+                                <option value="/fretboard-copper.png">Copper</option>
+                                <option value="/fretboard-brass.png">Brass</option>
+                                <option value="/fretboard-granite.png">Granite</option>
+                                <option value="/fretboard-marble.png">Marble</option>
+                                <option value="/fretboard-slate.png">Slate</option>
+                                <option value="/fretboard-concrete.png">Concrete</option>
+                                <option value="/fretboard-leather.png">Leather</option>
+                                <option value="/fretboard-fabric.png">Fabric</option>
+                                <option value="/fretboard-cork.png">Cork</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <button id="open-fretboard-controls-btn" class="control-btn">Fretboard Controls</button>
+                    <button id="open-custom-themes-btn" class="control-btn">Custom Themes</button>
+                    <button id="open-fret-range-btn" class="control-btn">Fret Range</button>
+                    <button id="export-key-diagrams-btn" class="control-btn">Export Key Diagrams (ZIP)</button>
+                    <button id="export-all-keys-diagrams-btn" class="control-btn">Export All Keys (ZIP)</button>
                 </div>
             </div>
         </div>
@@ -423,7 +571,7 @@
     
     <footer>
         <div class="controls-grid-container">
-            <div class="collapsible-section-wrapper">
+            <div class="collapsible-section-wrapper" id="main-controls-section-wrapper" style="display: none;">
                 <div class="collapsible-header" id="main-controls-header">
                     <h3>Fretboard Controls</h3>
                     <span class="collapse-icon">▼</span>
@@ -435,61 +583,10 @@
                             <input type="checkbox" id="show-notes-toggle" checked>
                         </div>
                         
-                        <div class="control-group">
-                            <label for="fretboard-select">Fretboard Material:</label>
-                            <select id="fretboard-select">
-                                <option value="fretboard-rosewood.png" selected>Rosewood</option>
-                                <option value="fretboard-maple.png">Maple</option>
-                                <option value="fretboard-ebony.png">Ebony</option>
-                                <option value="fretboard-pau-ferro.png">Pau Ferro</option>
-                                <option value="fretboard-walnut.png">Walnut</option>
-                                <option value="fretboard-white.png">White</option>
-                                <option value="fretboard-cherry.png">Cherry</option>
-                                <option value="fretboard-mahogany.png">Mahogany</option>
-                                <option value="fretboard-wenge.png">Wenge</option>
-                                <option value="fretboard-ziricote.png">Ziricote</option>
-                                <option value="fretboard-cocobolo.png">Cocobolo</option>
-                                <option value="fretboard-oak.png">Oak</option>
-                                <option value="fretboard-ash.png">Ash</option>
-                                <option value="fretboard-birch.png">Birch</option>
-                                <option value="fretboard-teak.png">Teak</option>
-                                <option value="fretboard-elm.png">Elm</option>
-                                <option value="fretboard-padauk.png">Padauk</option>
-                                <option value="fretboard-bubinga.png">Bubinga</option>
-                                <option value="fretboard-koa.png">Koa</option>
-                                <option value="fretboard-zebrawood.png">Zebrawood</option>
-                                <option value="fretboard-bocote.png">Bocote</option>
-                                <option value="fretboard-purpleheart.png">Purpleheart</option>
-                                <option value="fretboard-wenge-dark.png">Wenge (Dark)</option>
-                                <option value="fretboard-goncalo-alves.png">Goncalo Alves</option>
-                                <option value="fretboard-bloodwood.png">Bloodwood</option>
-                                <option value="fretboard-sapele.png">Sapele</option>
-                                <option value="fretboard-macassar-ebony.png">Macassar Ebony</option>
-                                <option value="fretboard-kingwood.png">Kingwood</option>
-                                <option value="fretboard-african-blackwood.png">African Blackwood</option>
-                                <option value="fretboard-snakewood.png">Snakewood</option>
-                                <option value="fretboard-lignum-vitae.png">Lignum Vitae</option>
-                                <option value="fretboard-marble.png">Marble</option>
-                                <option value="fretboard-granite.png">Granite</option>
-                                <option value="fretboard-slate.png">Slate</option>
-                                <option value="fretboard-steel.png">Brushed Steel</option>
-                                <option value="fretboard-aluminum.png">Aluminum</option>
-                                <option value="fretboard-copper.png">Copper</option>
-                                <option value="fretboard-brass.png">Brass</option>
-                                <option value="fretboard-carbon-fiber.png">Carbon Fiber</option>
-                                <option value="fretboard-plastic-black.png">Black Plastic</option>
-                                <option value="fretboard-plastic-white.png">White Plastic</option>
-                                <option value="fretboard-leather.png">Leather</option>
-                                <option value="fretboard-cork.png">Cork</option>
-                                <option value="fretboard-bamboo.png">Bamboo</option>
-                                <option value="fretboard-concrete.png">Concrete</option>
-                                <option value="fretboard-glass.png">Frosted Glass</option>
-                                <option value="fretboard-fabric.png">Canvas Fabric</option>
-                                <option value="fretboard-paper.png">Aged Paper</option>
-                                <option value="fretboard-ceramic.png">Ceramic Tile</option>
-                                <option value="fretboard-rust.png">Rusted Metal</option>
-                                <option value="fretboard-pearl.png">Mother of Pearl</option>
-                                <option value="fretboard-sand.png">Sand Texture</option>
+                        <div class="control-group" style="display: none;">
+                            <label for="fretboard-select-hidden-label">Fretboard Material:</label>
+                            <select id="fretboard-select-hidden">
+                                <option value="/fretboard-rosewood.png" selected>Rosewood</option>
                             </select>
                         </div>
                         
@@ -548,57 +645,6 @@
                         </div>
                         
                         <div class="control-group">
-                            <label for="note-color-preset">Note Colors:</label>
-                            <select id="note-color-preset">
-                                <option value="default">Default Blue/Green</option>
-                                <option value="sunset">Sunset (Orange/Red)</option>
-                                <option value="ocean">Ocean (Teal/Navy)</option>
-                                <option value="forest">Forest (Green/Brown)</option>
-                                <option value="royal">Royal (Purple/Gold)</option>
-                                <option value="fire">Fire (Red/Yellow)</option>
-                                <option value="ice">Ice (Light Blue/White)</option>
-                                <option value="galaxy">Galaxy (Purple/Pink)</option>
-                                <option value="earth">Earth (Brown/Tan)</option>
-                                <option value="neon">Neon (Bright Green/Pink)</option>
-                                <optgroup label="Monochromatic">
-                                    <option value="mono-gray">Gray Scale</option>
-                                    <option value="mono-blue">Blue Monochrome</option>
-                                    <option value="mono-red">Red Monochrome</option>
-                                    <option value="mono-green">Green Monochrome</option>
-                                    <option value="mono-purple">Purple Monochrome</option>
-                                </optgroup>
-                                <optgroup label="Chromatic (Each Note Different)">
-                                    <option value="chromatic-rainbow">Rainbow Spectrum</option>
-                                    <option value="chromatic-pastel">Pastel Spectrum</option>
-                                    <option value="chromatic-dark">Dark Spectrum</option>
-                                    <option value="chromatic-warm">Warm Tones</option>
-                                    <option value="chromatic-cool">Cool Tones</option>
-                                    <option value="chromatic-neon">Neon Spectrum</option>
-                                    <option value="chromatic-metal">Metal Tones</option>
-                                    <option value="chromatic-sunset" selected>Sunset Spectrum</option>
-                                    <option value="chromatic-ocean">Ocean Spectrum</option>
-                                    <option value="chromatic-forest">Forest Spectrum</option>
-                                    <option value="chromatic-jewel">Jewel Tones</option>
-                                    <option value="chromatic-fire">Fire Spectrum</option>
-                                    <option value="chromatic-candy">Candy Colors</option>
-                                    <option value="chromatic-earth">Earth Spectrum</option>
-                                    <option value="chromatic-cosmic">Cosmic Spectrum</option>
-                                    <option value="chromatic-galaxy">Galaxy Spectrum</option>
-                                    <option value="chromatic-tropical">Tropical Paradise</option>
-                                    <option value="chromatic-cyberpunk">Cyberpunk City</option>
-                                    <option value="chromatic-vintage">Vintage Vibes</option>
-                                    <option value="chromatic-desert">Desert Sunset</option>
-                                    <option value="chromatic-aurora">Aurora Borealis</option>
-                                    <option value="chromatic-deep-sea">Deep Sea</option>
-                                    <option value="chromatic-autumn">Autumn Leaves</option>
-                                    <option value="chromatic-spring">Spring Bloom</option>
-                                    <option value="chromatic-volcanic">Volcanic Eruption</option>
-                                    <option value="chromatic-arctic">Arctic Ice</option>
-                                </optgroup>
-                            </select>
-                        </div>
-                        
-                        <div class="control-group">
                             <label for="inlay-color-input">Fret Dot Color:</label>
                             <input type="color" id="inlay-color-input" value="#ffffff">
                         </div>
@@ -612,21 +658,11 @@
                             </select>
                         </div>
 
-                        <div class="control-group">
-                            <label for="page-theme-select">Page Theme:</label>
-                            <select id="page-theme-select">
-                                <option value="dark-mode">Dark</option>
-                                <option value="light-mode">Light</option>
-                                <option value="sepia-mode" selected>Sepia (Default)</option>
-                                <option value="slate-mode">Slate</option>
-                                <option value="terminal-mode">Terminal</option>
-                            </select>
-                        </div>
                     </div>
                 </div>
             </div>
             
-            <div class="collapsible-section-wrapper">
+            <div class="collapsible-section-wrapper" id="custom-themes-section-wrapper" style="display: none;">
                 <div class="collapsible-header" id="custom-themes-header">
                     <h3>Custom Themes</h3>
                     <span class="collapse-icon">▼</span>
@@ -638,16 +674,16 @@
                             <input type="text" id="custom-slideshow-name" placeholder="Theme Name" maxlength="30">
                             <select id="item-key-select">
                                 <option value="C">C</option>
-                                <option value="C#">C#</option>
+                                <option value="C#">C#/Db</option>
                                 <option value="D">D</option>
-                                <option value="D#">D#</option>
+                                <option value="D#">D#/Eb</option>
                                 <option value="E">E</option>
                                 <option value="F">F</option>
-                                <option value="F#">F#</option>
+                                <option value="F#">F#/Gb</option>
                                 <option value="G">G</option>
-                                <option value="G#">G#</option>
+                                <option value="G#">G#/Ab</option>
                                 <option value="A">A</option>
-                                <option value="A#">A#</option>
+                                <option value="A#">A#/Bb</option>
                                 <option value="B">B</option>
                             </select>
                             <select id="item-type-select">
@@ -671,121 +707,13 @@
                             <button id="import-slideshow-btn">Import Slideshow</button>
                             <input type="file" id="import-slideshow-file-input" accept=".csv" style="display: none;">
                             <button id="download-slideshow-template-btn">Download Template</button>
+                            <button id="download-all-definitions-btn">Download All Definitions</button>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="collapsible-section-wrapper">
-                <div class="collapsible-header" id="slideshow-header">
-                    <h3>Scale Slideshows</h3>
-                    <span class="collapse-icon">▼</span>
-                </div>
-                <div class="collapsible-content collapsed" id="slideshow-content">
-                    <div class="slideshow-main-controls">
-                        <div class="control-group" style="display: none;">
-                            <label for="slideshow-select-hidden">Slideshow Theme:</label>
-                            <select id="slideshow-select-hidden">
-                                <option value="default-imported-slideshow">My Imported Slideshow</option>
-                                <optgroup label="Chord Progressions">
-                                    <option value="pop-progression">Pop Progression (I-V-vi-IV)</option>
-                                    <option value="jazz-progression">Jazz Progression (ii-V-I)</option>
-                                    <option value="12-bar-blues">12-Bar Blues</option>
-                                    <option value="circle-of-fifths">Circle of Fifths</option>
-                                    <option value="andalusian-cadence">Andalusian Cadence</option>
-                                    <option value="50s-progression">50s Progression (I-vi-IV-V)</option>
-                                    <option value="pachelbels-canon">Pachelbel's Canon</option>
-                                    <option value="minor-pop-rock">Minor Key Pop/Rock (i-VI-III-VII)</option>
-                                    <option value="creep-progression">Creep Progression (I-III-IV-iv)</option>
-                                    <option value="hotel-california-verse">Hotel California Verse</option>
-                                    <option value="la-folia">La Folia</option>
-                                    <option value="montgomery-ward">Montgomery-Ward Bridge</option>
-                                    <option value="ragtime-progression">Ragtime Progression</option>
-                                    <option value="flamenco-progression">Flamenco Progression</option>
-                                    <option value="cry-me-a-river">Cry Me a River</option>
-                                    <option value="a-day-in-the-life">A Day in the Life</option>
-                                    <option value="all-the-things-you-are">All The Things You Are</option>
-                                    <option value="stairway-to-heaven">Stairway to Heaven</option>
-                                    <option value="heart-and-soul">Heart and Soul</option>
-                                    <option value="take-five">Take Five</option>
-                                </optgroup>
-                                <optgroup label="Scale & Mode Collections">
-                                    <option value="jazz-progressions">Jazz Progressions</option>
-                                    <option value="blues-journey">Blues Journey</option>
-                                    <option value="classical-modes">Classical Modes</option>
-                                    <option value="rock-pop">Rock & Pop</option>
-                                    <option value="latin-rhythms">Latin Rhythms</option>
-                                    <option value="celtic-scales">Celtic Scales</option>
-                                    <option value="eastern-scales">Eastern Scales</option>
-                                    <option value="modern-jazz">Modern Jazz</option>
-                                    <option value="folk-traditions">Folk Traditions</option>
-                                    <option value="bebop-essentials">Bebop Essentials</option>
-                                    <option value="fusion-elements">Fusion Elements</option>
-                                    <option value="gospel-soul">Gospel & Soul</option>
-                                    <option value="country-western">Country & Western</option>
-                                    <option value="mediterranean">Mediterranean</option>
-                                    <option value="pentatonic-world">Pentatonic World</option>
-                                    <option value="chromatic-journey">Chromatic Journey</option>
-                                    <option value="harmonic-minor-family">Harmonic Minor Family</option>
-                                    <option value="melodic-minor-family">Melodic Minor Family</option>
-                                    <option value="diminished-concepts">Diminished Concepts</option>
-                                    <option value="whole-tone-world">Whole Tone World</option>
-                                </optgroup>
-                                <optgroup label="Chord & Scale Pairings">
-                                    <option value="jazz-standards-starter">Jazz Standards Starter</option>
-                                    <option value="blues-improvisation-toolkit">Blues Improvisation Toolkit</option>
-                                    <option value="modal-jazz-explorer">Modal Jazz Explorer</option>
-                                    <option value="rock-riffage">Rock Riffage</option>
-                                    <option value="funk-groove">Funk & Groove</option>
-                                    <option value="neo-soul-flavors">Neo-Soul Flavors</option>
-                                    <option value="folk-acoustic-strummer">Folk & Acoustic Strummer</option>
-                                    <option value="metal-mayhem">Metal Mayhem</option>
-                                    <option value="bossa-nova-moods">Bossa Nova Moods</option>
-                                    <option value="country-twang">Country Twang</option>
-                                    <option value="cinematic-soundscapes">Cinematic Soundscapes</option>
-                                    <option value="gospel-harmonies">Gospel Harmonies</option>
-                                    <option value="reggae-rhythms">Reggae Rhythms</option>
-                                    <option value="ambient-textural">Ambient & Textural</option>
-                                    <option value="bebop-language">Bebop Language</option>
-                                </optgroup>
-                            </select>
-                        </div>
-                        <div class="control-group">
-                            <label for="slideshow-measures">Measures per Slide:</label>
-                            <input type="number" id="slideshow-measures" min="1" max="16" value="2">
-                        </div>
-                        <div class="control-group" style="display: none;">
-                            <label for="slideshow-bpm-hidden">BPM:</label>
-                            <input type="number" id="slideshow-bpm-hidden" min="30" max="300" value="120">
-                        </div>
-                        <div class="control-group" style="display: none;">
-                            <label for="slideshow-transpose-hidden">Transpose (semitones):</label>
-                            <input type="number" id="slideshow-transpose-hidden" min="0" max="11" value="0">
-                        </div>
-                    </div>
-                    <div class="slideshow-playback-controls">
-                        <button id="slideshow-play-hidden">▶ Play</button>
-                        <button id="slideshow-pause">⏸ Pause</button>
-                        <button id="slideshow-stop-hidden">⏹ Stop</button>
-                        <button id="slideshow-prev">⏮ Previous</button>
-                        <button id="slideshow-next">⏭ Next</button>
-                    </div>
-                    <div class="slideshow-info">
-                        <div class="slideshow-progress">
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="slideshow-progress-fill"></div>
-                            </div>
-                            <span id="slideshow-counter">0 / 0</span>
-                        </div>
-                        <div class="current-item-info">
-                            <strong id="current-item-name">Ready to start slideshow</strong>
-                            <p id="current-item-description">Select a theme and press play</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="collapsible-section-wrapper">
+            <div class="collapsible-section-wrapper" id="fret-range-section-wrapper" style="display: none;">
                 <div class="collapsible-header" id="fret-range-header">
                     <h3>Fret Range per String</h3>
                     <span class="collapse-icon rotated">▼</span>
@@ -918,15 +846,87 @@
         </div>
     </footer>
 
-    <div id="fretboard-modal" class="modal-overlay">
+    <div id="fretboard-controls-modal" class="modal-overlay">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
-            <div id="modal-fretboard-content">
-                <!-- Fretboard will be cloned here -->
+            <div id="modal-controls-content">
+                 <h3>Fretboard Controls</h3>
+                 <div class="control-group" style="display:none;">
+                    <label for="instrument-select-hidden">Instrument & Tuning:</label>
+                    <select id="instrument-select-hidden">
+                        <optgroup label="Guitars (6-String)">
+                            <option value="guitar-6-standard" selected>Standard (EADGBe)</option>
+                            <option value="guitar-6-drop-d">Drop D (DADGBe)</option>
+                            <option value="guitar-6-open-g">Open G (DGDGBd)</option>
+                            <option value="guitar-6-open-d">Open D (DADF#Ad)</option>
+                        </optgroup>
+                        <optgroup label="Guitars (7-String)">
+                            <option value="guitar-7-standard">Standard (BEADGBe)</option>
+                            <option value="guitar-7-drop-a">Drop A (AEADGBe)</option>
+                        </optgroup>
+                        <optgroup label="Basses (4-String)">
+                            <option value="bass-4-standard">Standard (EADG)</option>
+                            <option value="bass-4-drop-d">Drop D (DADG)</option>
+                        </optgroup>
+                        <optgroup label="Basses (5-String)">
+                            <option value="bass-5-standard">Standard (BEADG)</option>
+                            <option value="bass-5-double-bass">Double Bass (EADG)</option>
+                        </optgroup>
+                        <optgroup label="European Bowed Strings">
+                            <option value="violin">Violin (GDAE)</option>
+                            <option value="viola">Viola (CGDA)</option>
+                            <option value="cello">Cello (CGDA)</option>
+                            <option value="viol-6-string">Viol, 6-String (DGCFAd)</option>
+                        </optgroup>
+                        <optgroup label="Folk & World Instruments">
+                            <option value="banjo-tenor-jazz">Banjo, Tenor - Jazz (CGDA)</option>
+                            <option value="banjo-tenor-irish">Banjo, Tenor - Irish (GDAE)</option>
+                            <option value="banjo-plectrum">Banjo, Plectrum (CGBD)</option>
+                            <option value="ukulele-soprano">Ukulele, Soprano (GCEA)</option>
+                            <option value="cavaquinho-standard">Cavaquinho (DGBD)</option>
+                            <option value="irish-fiddle">Irish Fiddle (GDAE)</option>
+                            <option value="hardanger-fiddle">Hardanger Fiddle (ADAE)</option>
+                            <option value="nyckelharpa">Nyckelharpa (CGDA)</option>
+                            <option value="erhu">Erhu (DA)</option>
+                            <option value="shamisen">Shamisen (CGC)</option>
+                            <option value="morin-khuur">Morin Khuur (CG)</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="control-group" style="display:none;">
+                    <label for="num-strings-select">Number of Strings:</label>
+                    <select id="num-strings-select">
+                        <option value="4">4 (Bass)</option>
+                        <option value="5">5 (Bass)</option>
+                        <option value="6" selected>6 (Guitar)</option>
+                        <option value="7">7 (Guitar)</option>
+                    </select>
+                </div>
+                 <!-- Controls will be moved here by JS -->
             </div>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <div id="custom-themes-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="modal-custom-themes-content">
+                 <h3>Custom Themes</h3>
+                 <!-- Controls will be moved here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <div id="fret-range-modal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="modal-fret-range-content">
+                 <h3>Fret Range per String</h3>
+                 <!-- Controls will be moved here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
 </body>
 </html>

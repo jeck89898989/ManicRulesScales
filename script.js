@@ -1,9 +1,11 @@
+import html2canvas from 'html2canvas';
+
 document.addEventListener('DOMContentLoaded', () => {
     const fretboard = document.getElementById('fretboard');
     const toggleAllNotes = document.getElementById('show-notes-toggle');
     const keySelect = document.getElementById('key-select');
     const scaleSelect = document.getElementById('scale-select');
-    const fretboardSelect = document.getElementById('fretboard-select');
+    const fretboardSelect = document.getElementById('fretboard-material-select');
     const stringWidthSlider = document.getElementById('string-width');
     const stringWidthValue = document.getElementById('string-width-value');
     const fretWidthSlider = document.getElementById('fret-width');
@@ -19,10 +21,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentSelectionDisplay = document.getElementById('current-selection-display');
     const currentSelectionIntervals = document.getElementById('current-selection-intervals');
     const currentSelectionNotes = document.getElementById('current-selection-notes');
+    const currentSelectionNotesEnharmonicSharp = document.getElementById('current-selection-notes-enharmonic-sharp');
+    const currentSelectionNotesEnharmonicFlat = document.getElementById('current-selection-notes-enharmonic-flat');
     const noteShapeSelect = document.getElementById('note-shape-select'); 
     const fretNumbersDisplay = document.getElementById('fret-numbers-display'); 
     const noteSizeSlider = document.getElementById('note-size');
     const noteSizeValue = document.getElementById('note-size-value');
+
+    // New strings control
+    const instrumentSelect = document.getElementById('instrument-select');
+    const numStringsSelect = document.getElementById('num-strings-select');
+
+    // New Fretboard View select
+    const fretboardViewSelect = document.getElementById('fretboard-view-select');
 
     // Quiz elements
     const quizTypeSelect = document.getElementById('quiz-type-select');
@@ -33,17 +44,70 @@ document.addEventListener('DOMContentLoaded', () => {
     const nextQuestionBtn = document.getElementById('next-question-btn');
     const stopQuizBtn = document.getElementById('stop-quiz-btn');
 
-    // Modal elements (references kept for safety, but functionality is removed)
-    const openModalBtn = document.getElementById('open-modal-btn');
-    const modal = document.getElementById('fretboard-modal');
-    const closeModalBtn = document.querySelector('.close-modal');
-    const modalFretboardContent = document.getElementById('modal-fretboard-content');
-    const slideshowTimeRemaining = document.getElementById('slideshow-time-remaining');
+    // Modal elements for fretboard controls
+    const openFretboardControlsBtn = document.getElementById('open-fretboard-controls-btn');
+    const controlsModal = document.getElementById('fretboard-controls-modal');
+    const closeControlsModalBtn = controlsModal.querySelector('.close-modal');
+    const modalControlsContent = document.getElementById('modal-controls-content');
+    
+    // New modal elements for custom themes
+    const openCustomThemesBtn = document.getElementById('open-custom-themes-btn');
+    const customThemesModal = document.getElementById('custom-themes-modal');
+    const closeCustomThemesModalBtn = customThemesModal.querySelector('.close-modal');
+    const modalCustomThemesContent = document.getElementById('modal-custom-themes-content');
+
+    // New modal elements for fret range
+    const openFretRangeBtn = document.getElementById('open-fret-range-btn');
+    const fretRangeModal = document.getElementById('fret-range-modal');
+    const closeFretRangeModalBtn = fretRangeModal.querySelector('.close-modal');
+    const modalFretRangeContent = document.getElementById('modal-fret-range-content');
+
+    // Move controls into modal
+    const mainControlsContentDiv = document.getElementById('main-controls-content');
+    const controlsDiv = mainControlsContentDiv.querySelector('.controls');
+    if (controlsDiv) {
+        // Find the location of the new instrument select and insert after.
+        const numStringsSelectDiv = modalControlsContent.querySelector('.control-group[style*="display:none"]');
+        if (numStringsSelectDiv) {
+            numStringsSelectDiv.insertAdjacentElement('afterend', controlsDiv);
+        } else {
+             modalControlsContent.appendChild(controlsDiv);
+        }
+    }
+    // Now hide the original wrapper
+    document.getElementById('main-controls-section-wrapper').style.display = 'none';
+
+    // Move "Custom Themes" content into its modal
+    const customThemesContentDiv = document.getElementById('custom-themes-content');
+    if (customThemesContentDiv) {
+        // Find the actual content inside and move it.
+        const contentToMove = customThemesContentDiv.querySelector('.custom-slideshow-section');
+        if (contentToMove) {
+            modalCustomThemesContent.appendChild(contentToMove);
+        }
+    }
+    // Hide the original wrapper for custom themes
+    document.getElementById('custom-themes-section-wrapper').style.display = 'none';
+
+    // Move "Fret Range" content into its modal
+    const fretRangeSectionWrapper = document.getElementById('fret-range-section-wrapper');
+    const fretRangeContentDiv = document.getElementById('fret-range-content');
+    if (fretRangeContentDiv) {
+        modalFretRangeContent.appendChild(fretRangeContentDiv);
+        // The header is outside the content div, so we need to handle that if we want it.
+        // Let's just use the modal's built-in title.
+        const header = fretRangeSectionWrapper.querySelector('.collapsible-header');
+        if(header) header.style.display = 'none'; // hide original header
+        fretRangeContentDiv.classList.remove('collapsed'); // Make sure it's visible inside the modal
+    }
+     // Hide the original wrapper for fret range
+    if(fretRangeSectionWrapper) fretRangeSectionWrapper.style.display = 'none';
 
     // Custom theme controls
     const customThemesHeader = document.getElementById('custom-themes-header');
     const customThemesContent = document.getElementById('custom-themes-content');
     const customSlideshowName = document.getElementById('custom-slideshow-name');
+    const itemKeySelect = document.getElementById('item-key-select');
     const itemTypeSelect = document.getElementById('item-type-select');
     const itemNameSelect = document.getElementById('item-name-select');
     const itemDescription = document.getElementById('item-description');
@@ -67,6 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const importSlideshowBtn = document.getElementById('import-slideshow-btn');
     const importSlideshowFileInput = document.getElementById('import-slideshow-file-input');
     const downloadSlideshowTemplateBtn = document.getElementById('download-slideshow-template-btn');
+    const customSlideshowsOptgroup = document.getElementById('custom-slideshows-optgroup');
+    const downloadAllDefinitionsBtn = document.getElementById('download-all-definitions-btn');
 
     // Main controls collapsible elements
     const mainControlsHeader = document.getElementById('main-controls-header');
@@ -74,18 +140,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Slideshow buttons
     const slideshowPlay = document.getElementById('slideshow-play');
-    const slideshowPlayHidden = document.getElementById('slideshow-play-hidden');
     const slideshowStop = document.getElementById('slideshow-stop');
-    const slideshowStopHidden = document.getElementById('slideshow-stop-hidden');
-    const slideshowPause = document.getElementById('slideshow-pause');
-    const slideshowPrev = document.getElementById('slideshow-prev');
-    const slideshowNext = document.getElementById('slideshow-next');
-    const slideshowSelectHiddenMain = document.getElementById('slideshow-select-hidden');
+    const slideshowBpm = document.getElementById('slideshow-bpm');
+    const slideshowTranspose = document.getElementById('slideshow-transpose');
+    const slideshowSelect = document.getElementById('slideshow-select');
+    const slideshowBaseKey = document.getElementById('slideshow-base-key');
+    const slideshowTimeRemaining = document.getElementById('slideshow-time-remaining');
+    const slideshowItemDescription = document.getElementById('slideshow-item-description');
 
     const NUM_FRETS = 15; 
     let TUNING = ['E', 'B', 'G', 'D', 'A', 'E']; 
-    const CHROMATIC_SCALE = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
+    const ALL_NOTES = ['E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#'];
+    const CHROMATIC_SCALE_SHARPS = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
+    const CHROMATIC_SCALE_FLATS = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab'];
+    const CHROMATIC_SCALE = CHROMATIC_SCALE_SHARPS; // Use sharps as the internal reference
+
     const SOLFEGE_CHROMATIC = ['La', 'Li', 'Ti', 'Do', 'Di', 'Re', 'Ri', 'Mi', 'Fa', 'Fi', 'Sol', 'Si'];
+
+    const ENHARMONIC_MAP = {
+        'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb',
+        'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#'
+    };
+
+    function getEnharmonicDisplay(note, preferFlat = false) {
+        if (preferFlat && ENHARMONIC_MAP[note] && CHROMATIC_SCALE_FLATS.includes(ENHARMONIC_MAP[note])) {
+             return ENHARMONIC_MAP[note];
+        }
+        if (!preferFlat && ENHARMONIC_MAP[note] && CHROMATIC_SCALE_SHARPS.includes(note)) {
+            return note;
+        }
+        if(ENHARMONIC_MAP[note]) { // Fallback
+            return ENHARMONIC_MAP[note];
+        }
+        return note;
+    }
 
     // Global variables for custom themes
     let customSlideshowData = [];
@@ -120,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'neapolitan-major': [0, 1, 3, 5, 7, 9, 11],
         'persian': [0, 1, 4, 5, 6, 8, 11],
         'enigmatic': [0, 1, 4, 6, 8, 10, 11],
-        'double-harmonic-major': [0, 1, 4, 5, 7, 8, 11],
+        'double-harmonic-major': [0, 1, 4, 5, 7, 8, 10],
         'byzantine': [0, 1, 4, 5, 7, 8, 11],
         'arabic': [0, 1, 4, 5, 6, 8, 10],
         'hirajoshi': [0, 2, 3, 7, 8],
@@ -144,10 +232,9 @@ document.addEventListener('DOMContentLoaded', () => {
         'bebop-major': [0, 2, 4, 5, 7, 8, 9, 11],
         'bebop-minor': [0, 2, 3, 5, 7, 8, 9, 10],
         'half-whole-diminished': [0, 1, 3, 4, 6, 7, 9, 10],
-        'whole-half-diminished': [0, 2, 3, 5, 6, 8, 9, 11],
-        'lydian-dominant': [0, 2, 4, 6, 7, 9, 10],
+        'lydian-diminished': [0, 2, 3, 6, 7, 9, 11],
         'super-locrian': [0, 1, 3, 4, 6, 8, 10],
-        'mixolydian-b6': [0, 2, 4, 5, 7, 8, 10],
+        'mixolydian-b6': [0, 2, 4, 5, 7, 9, 10],
         'dorian-b2': [0, 1, 3, 5, 7, 9, 10],
         'phrygian-dominant': [0, 0, 3, 5, 7, 8, 10],
         'harmonic-major': [0, 2, 4, 5, 7, 8, 11],
@@ -204,7 +291,6 @@ document.addEventListener('DOMContentLoaded', () => {
         'gregorian-minor': [0, 2, 3, 5, 7, 8, 10],
         'blues-dorian': [0, 2, 3, 5, 6, 7, 9, 10],
         'blues-mixolydian': [0, 2, 3, 4, 5, 7, 9, 10],
-        'blues-phrygian': [0, 1, 3, 5, 6, 7, 8, 10],
         'diminished-blues': [0, 1, 3, 4, 5, 6, 7, 9, 10],
         'major-pentatonic-add-4': [0, 2, 4, 5, 7, 9],
         'minor-pentatonic-add-2': [0, 2, 3, 5, 7, 10],
@@ -293,11 +379,52 @@ document.addEventListener('DOMContentLoaded', () => {
         '7b5': [0, 4, 6, 10]
     };
 
+    const TUNING_PRESETS = {
+        'guitar-6-standard': { strings: 6, tuning: ['E', 'B', 'G', 'D', 'A', 'E'] },
+        'guitar-6-drop-d': { strings: 6, tuning: ['E', 'B', 'G', 'D', 'A', 'D'] },
+        'guitar-6-open-g': { strings: 6, tuning: ['D', 'B', 'G', 'D', 'G', 'D'] },
+        'guitar-6-open-d': { strings: 6, tuning: ['D', 'A', 'F#', 'D', 'A', 'D'] },
+        'guitar-7-standard': { strings: 7, tuning: ['E', 'B', 'G', 'D', 'A', 'E', 'B'] },
+        'guitar-7-drop-a': { strings: 7, tuning: ['E', 'B', 'G', 'D', 'A', 'E', 'A'] },
+        'bass-4-standard': { strings: 4, tuning: ['G', 'D', 'A', 'E'] },
+        'bass-4-drop-d': { strings: 4, tuning: ['G', 'D', 'A', 'D'] },
+        'bass-5-standard': { strings: 5, tuning: ['G', 'D', 'A', 'E', 'B'] },
+        'bass-5-double-bass': { strings: 4, tuning: ['G', 'D', 'A', 'E'] },
+        // European Bowed
+        'violin': { strings: 4, tuning: ['E', 'A', 'D', 'G'] },
+        'viola': { strings: 4, tuning: ['A', 'D', 'G', 'C'] },
+        'cello': { strings: 4, tuning: ['A', 'D', 'G', 'C'] },
+        'viol-6-string': { strings: 6, tuning: ['D', 'A', 'F', 'C', 'G', 'D'] },
+        // Folk & World
+        'banjo-tenor-jazz': { strings: 4, tuning: ['A', 'D', 'G', 'C'] },
+        'banjo-tenor-irish': { strings: 4, tuning: ['E', 'A', 'D', 'G'] },
+        'banjo-plectrum': { strings: 4, tuning: ['D', 'B', 'G', 'C'] },
+        'ukulele-soprano': { strings: 4, tuning: ['A', 'E', 'C', 'G'] },
+        'cavaquinho-standard': { strings: 4, tuning: ['D', 'B', 'G', 'D'] },
+        'irish-fiddle': { strings: 4, tuning: ['E', 'A', 'D', 'G'] },
+        'hardanger-fiddle': { strings: 4, tuning: ['E', 'A', 'D', 'A'] },
+        'nyckelharpa': { strings: 4, tuning: ['A', 'D', 'G', 'C'] },
+        'erhu': { strings: 2, tuning: ['A', 'D'] },
+        'shamisen': { strings: 3, tuning: ['C', 'G', 'C'] },
+        'morin-khuur': { strings: 2, tuning: ['G', 'C'] },
+    };
+
     // Arrays to categorize scale types for display purposes
-    const ALL_SCALES_NAMES = Array.from(document.querySelector('#scale-select optgroup[label="Scales"]').children).map(opt => opt.value);
-    const ALL_INTERVALS_NAMES = Array.from(document.querySelector('#scale-select optgroup[label="Intervals"]').children).map(opt => opt.value);
-    const ALL_CHORDS_NAMES = Array.from(document.querySelector('#scale-select optgroup[label="Chords"]').children).map(opt => opt.value);
-    ALL_SCALES_NAMES.unshift('chromatic'); 
+    const ALL_SCALES_NAMES = [
+        ...Array.from(document.querySelectorAll('#scale-select optgroup[label^="Common"] option')),
+        ...Array.from(document.querySelectorAll('#scale-select optgroup[label^="Pentatonic"] option')),
+        ...Array.from(document.querySelectorAll('#scale-select optgroup[label^="Blues"] option')),
+        ...Array.from(document.querySelectorAll('#scale-select optgroup[label^="Harmonic"] option')),
+        ...Array.from(document.querySelectorAll('#scale-select optgroup[label^="Symmetrical"] option')),
+        ...Array.from(document.querySelectorAll('#scale-select optgroup[label^="Bebop"] option')),
+        ...Array.from(document.querySelectorAll('#scale-select optgroup[label^="World"] option')),
+        ...Array.from(document.querySelectorAll('#scale-select optgroup[label^="Modal"] option'))
+    ].map(opt => opt.value);
+    const ALL_INTERVALS_NAMES = Array.from(document.querySelectorAll('#scale-select optgroup[label="Intervals"] option')).map(opt => opt.value);
+    const ALL_CHORDS_NAMES = [
+        ...Array.from(document.querySelectorAll('#scale-select optgroup[label^="Chords"] option'))
+    ].map(opt => opt.value);
+    ALL_SCALES_NAMES.unshift('chromatic');
 
     // Generate modes for all scales
     function generateModes() {
@@ -369,17 +496,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Add custom themes collapsible functionality
+    // Custom theme controls
     customThemesHeader.addEventListener('click', () => {
         customThemesContent.classList.toggle('collapsed');
         customThemesHeader.querySelector('.collapse-icon').classList.toggle('rotated');
     });
 
-    // Main controls collapsible functionality
-    mainControlsHeader.addEventListener('click', () => {
-        mainControlsContent.classList.toggle('collapsed');
-        mainControlsHeader.querySelector('.collapse-icon').classList.toggle('rotated');
-    });
+    // Main controls collapsible functionality (now disabled, kept to prevent errors)
+    if (mainControlsHeader) {
+        mainControlsHeader.addEventListener('click', () => {
+            if (mainControlsContent) {
+                mainControlsContent.classList.toggle('collapsed');
+                mainControlsHeader.querySelector('.collapse-icon').classList.toggle('rotated');
+            }
+        });
+    }
 
     // Item type change handler
     itemTypeSelect.addEventListener('change', () => {
@@ -412,9 +543,54 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCustomSlideshowDisplay();
         
         // Clear inputs
+        itemKeySelect.value = 'C';
+        itemTypeSelect.value = 'scale';
+        populateItemNameSelect('scale');
         itemNameSelect.value = '';
         itemDescription.value = '';
         itemMeasures.value = '2';
+    });
+
+    // Save custom slideshow
+    saveCustomSlideshow.addEventListener('click', () => {
+        const name = customSlideshowName.value.trim();
+        if (!name) {
+            alert('Please enter a name for your slideshow.');
+            customSlideshowName.focus();
+            return;
+        }
+        if (customSlideshowData.length === 0) {
+            alert('Please add at least one item to your slideshow.');
+            return;
+        }
+
+        // Create a unique key for the new slideshow
+        const slideshowKey = `custom-${name.replace(/\s+/g, '-').toLowerCase()}`;
+
+        // Add the new slideshow to the global SLIDESHOWS object
+        // Store a copy, not a reference
+        SLIDESHOWS[slideshowKey] = [...customSlideshowData];
+
+        // Create a new option for the select dropdown
+        const option = document.createElement('option');
+        option.value = slideshowKey;
+        option.textContent = name;
+        
+        // Append the new option to the "Custom Slideshows" optgroup
+        if (customSlideshowsOptgroup) {
+            customSlideshowsOptgroup.appendChild(option);
+        }
+        
+        // Select the newly created slideshow
+        slideshowSelect.value = slideshowKey;
+        
+        // Provide user feedback and reset the builder
+        alert(`Slideshow "${name}" saved!`);
+        
+        customSlideshowName.value = '';
+        customSlideshowData = [];
+        updateCustomSlideshowDisplay();
+        updateBaseKeyDisplay(); // Update the base key display for the new slideshow
     });
 
     // Update custom slideshow display
@@ -457,14 +633,6 @@ document.addEventListener('DOMContentLoaded', () => {
         option.value = slideshowKey;
         option.textContent = slideshowDisplayName;
         slideshowSelect.appendChild(option);
-        slideshowSelectHiddenMain.appendChild(option.cloneNode(true));
-
-        // Also add to the hidden select to keep them in sync
-        const hiddenOption = option.cloneNode(true);
-        const hiddenSlideshowSelect = document.getElementById('slideshow-select-hidden');
-        if (hiddenSlideshowSelect) {
-            hiddenSlideshowSelect.appendChild(hiddenOption);
-        }
     }
 
     // Slideshow data structures
@@ -527,9 +695,9 @@ document.addEventListener('DOMContentLoaded', () => {
             { key: 'G', type: 'chord', name: 'major-triad', title: 'G Major', description: 'The VII chord, the subtonic.' }
         ],
         'creep-progression': [
-            { key: 'G', type: 'chord', name: 'major-triad', title: 'G Major', description: 'The I chord, the tonic.' },
+            { key: 'G', type: 'chord', name: 'major-triad', title: 'G Major', description: 'The I chord. The tonic.' },
             { key: 'B', type: 'chord', name: 'major-triad', title: 'B Major', description: 'The III chord, a chromatic major chord.' },
-            { key: 'C', type: 'chord', name: 'major-triad', title: 'C Major', description: 'The IV chord, the subdominant.' },
+            { key: 'C', type: 'chord', name: 'major-triad', title: 'C Major', description: 'The IV chord. The subdominant.' },
             { key: 'C', type: 'chord', name: 'minor-triad', title: 'C Minor', description: 'The iv chord, a minor subdominant for dramatic effect.' }
         ],
         'hotel-california-verse': [
@@ -561,246 +729,205 @@ document.addEventListener('DOMContentLoaded', () => {
             { key: 'C', type: 'chord', name: 'major-triad', title: 'C Major', description: 'I - Tonic resolution.' }
         ],
         'ragtime-progression': [
-            { key: 'C', type: 'chord', name: 'major-triad', title: 'C Major', description: 'The I chord. Strum with C Major scale melodies.' },
-            { key: 'C', type: 'scale', name: 'major', title: 'C Major Scale', description: 'The happy, bright foundation.' },
-            { key: 'A', type: 'chord', name: 'minor-triad', title: 'A Minor', description: 'The vi chord, the relative minor.' },
-            { key: 'A', type: 'scale', name: 'pentatonic-minor', title: 'A Minor Pentatonic', description: 'Perfect for classic country licks.' },
-            { key: 'E', type: 'chord', name: 'dom7', title: 'E7', description: 'The V chord. Target the chord tones.' },
-            { key: 'E', type: 'scale', name: 'mixolydian', title: 'E Mixolydian', description: 'The perfect scale to outline the V7 sound.' }
+            { key: 'C', type: 'chord', name: 'maj7', title: 'Cmaj7', description: 'I - The tonic, starting the cycle.' },
+            { key: 'A', type: 'chord', name: 'dom7', title: 'Am7', description: 'vi - Secondary dominant leading to ii.' },
+            { key: 'D', type: 'chord', name: 'dom7', title: 'D7', description: 'II7 - Secondary dominant leading to V.' },
+            { key: 'G', type: 'chord', name: 'dom7', title: 'G7', description: 'V7 - The dominant, resolving to I.' }
         ],
         'flamenco-progression': [
-            { key: 'A', type: 'chord', name: 'minor-triad', title: 'A Minor', description: 'i - Tonic minor.' },
-            { key: 'G', type: 'chord', name: 'major-triad', title: 'G Major', description: 'VII - Subtonic.' },
-            { key: 'F', type: 'chord', name: 'major-triad', title: 'F Major', description: 'VI - Submediant.' },
-            { key: 'E', type: 'chord', name: 'major-triad', title: 'E Major', description: 'V - Dominant (often played as a major chord).' }
+            { key: 'D', type: 'chord', name: 'minor-triad', title: 'D Minor', description: 'i - The minor tonic.' },
+            { key: 'C', type: 'chord', name: 'major-triad', title: 'C Major', description: 'VII - Subtonic.' },
+            { key: 'B', type: 'chord', name: 'major-triad', title: 'Bb Major', description: 'VI - Submediant.' },
+            { key: 'A', type: 'chord', name: 'dom7', title: 'A7', description: 'V7 - The dominant, creating a powerful cadence.' }
         ],
         'cry-me-a-river': [
-            { key: 'A', type: 'chord', name: 'min7', title: 'A Minor 7', description: 'i - Tonic minor.' },
-            { key: 'D', type: 'chord', name: 'dom7', title: 'D Dominant 7', description: 'V7/V - Secondary dominant.' },
-            { key: 'G', type: 'chord', name: 'maj7', title: 'G Major 7', description: 'VII - Subtonic major.' },
-            { key: 'C', type: 'chord', name: 'maj7', title: 'C Major 7', description: 'III - Relative major.' },
-            { key: 'F#', type: 'chord', name: 'half-dim7', title: 'F# Half-Diminished 7', description: 'viø7 - Submediant half-diminished.' },
-            { key: 'B', type: 'chord', name: 'dom7', title: 'B Dominant 7', description: 'V7/ii - Secondary dominant.' },
-            { key: 'E', type: 'chord', name: 'min7', title: 'E Minor 7', description: 'v - Dominant minor.' },
-            { key: 'A', type: 'chord', name: 'dom7', title: 'A Dominant 7', description: 'V7/IV - Leading to Dm.' }
+            { key: 'A', type: 'chord', name: 'min7', title: 'Am7', description: 'i - The tonic minor.' },
+            { key: 'D', type: 'chord', name: 'min7', title: 'Dm7', description: 'iv - The subdominant minor.' },
+            { key: 'G', type: 'chord', name: 'dom7', title: 'G7', description: 'VII7 - The subtonic dominant.' },
+            { key: 'C', type: 'chord', name: 'maj7', title: 'Cmaj7', description: 'III - The relative major.' }
         ],
         'a-day-in-the-life': [
-            { key: 'G', type: 'chord', name: 'major-triad', title: 'G Major', description: 'I - Opens the verse.' },
-            { key: 'B', type: 'chord', name: 'minor-triad', title: 'B Minor', description: 'iii - Minor mediant.' },
-            { key: 'E', type: 'chord', name: 'minor-triad', title: 'E Minor', description: 'vi - Submediant.' },
-            { key: 'C', type: 'chord', name: 'major-triad', title: 'C Major', description: 'IV - Subdominant.' }
+            { key: 'G', type: 'chord', name: 'major-triad', title: 'G Major', description: 'I - The tonic.' },
+            { key: 'B', type: 'chord', name: 'minor-triad', title: 'B Minor', description: 'iii - The mediant minor.' },
+            { key: 'C', type: 'chord', name: 'major-triad', title: 'C Major', description: 'IV - The subdominant.' },
+            { key: 'G', type: 'chord', name: 'major-triad', title: 'G Major', description: 'I - Return to the tonic.' }
         ],
         'all-the-things-you-are': [
-            { key: 'F', type: 'chord', name: 'min7', title: 'F Minor 7', description: 'i - Tonic in F minor (section start).' },
-            { key: 'B', type: 'chord', name: 'min7', title: 'B Minor 7', description: 'iv - Subdominant.' },
-            { key: 'E', type: 'chord', name: 'dom7', title: 'E Dominant 7', description: 'V7 - Dominant.' },
-            { key: 'A', type: 'chord', name: 'maj7', title: 'A Major 7', description: 'III - Relative major.' },
-            { key: 'D', type: 'chord', name: 'maj7', title: 'D Major 7', description: 'VI - Submediant major.' },
-            { key: 'G', type: 'chord', name: 'dom7', title: 'G Dominant 7', description: 'V7/V - Secondary dominant.' },
-            { key: 'C', type: 'chord', name: 'maj7', title: 'C Major 7', description: 'V - Dominant major (section end).' }
+            { key: 'F', type: 'chord', name: 'min7', title: 'Fm7', description: 'The starting chord, vi in the key of Ab.' },
+            { key: 'B', type: 'chord', name: 'min7', title: 'Bbm7', description: 'The ii chord.' },
+            { key: 'E', type: 'chord', name: 'dom7', title: 'Eb7', description: 'The V chord.' },
+            { key: 'A', type: 'chord', name: 'maj7', title: 'Abmaj7', description: 'The I chord, a resolution.' },
+            { key: 'D', type: 'chord', name: 'maj7', title: 'Dbmaj7', description: 'The IV chord.' },
+            { key: 'G', type: 'chord', name: 'dom7', title: 'G7', description: 'A V chord leading to C major.' },
+            { key: 'C', type: 'chord', name: 'maj7', title: 'Cmaj7', description: 'A temporary tonic.' }
         ],
         'stairway-to-heaven': [
-            { key: 'A', type: 'chord', name: 'minor-triad', title: 'A Minor', description: 'i - Tonic.' },
-            { key: 'G', type: 'chord', name: 'major-triad', title: 'G Major', description: 'VII - Subtonic.' },
-            { key: 'F', type: 'chord', name: 'maj7', title: 'F Major 7', description: 'VI - Subdominant.' },
-            { key: 'G', type: 'chord', name: 'major-triad', title: 'G Major', description: 'VII - Subtonic again.' },
-            { key: 'A', type: 'chord', name: 'minor-triad', title: 'A Minor', description: 'i - Returning to tonic.' }
+            { key: 'A', type: 'chord', name: 'minor-triad', title: 'Am', description: 'i - The iconic opening arpeggio.' },
+            { key: 'G', type: 'chord', name: 'augmented', title: 'G#aug', description: 'A passing chord with a descending bassline.' },
+            { key: 'C', type: 'chord', name: 'major-triad', title: 'C/G', description: 'III - Relative major with G in the bass.' },
+            { key: 'D', type: 'chord', name: 'major-triad', title: 'D/F#', description: 'IV - A major chord with F# in the bass.' },
+            { key: 'F', type: 'chord', name: 'maj7', title: 'Fmaj7', description: 'VI - The submediant, creating a dreamy feel.' },
+            { key: 'G', type: 'chord', name: 'major-triad', title: 'G', description: 'VII - The subtonic.' },
+            { key: 'A', type: 'chord', name: 'minor-triad', title: 'Am', description: 'i - Returning to the tonic to complete the phrase.' }
         ],
         'heart-and-soul': [
-            { key: 'C', type: 'chord', name: 'major-triad', title: 'C Major', description: 'I - Tonic.' },
-            { key: 'A', type: 'chord', name: 'minor-triad', title: 'A Minor', description: 'vi - Submediant.' },
-            { key: 'D', type: 'chord', name: 'minor-triad', title: 'D Minor', description: 'ii - Supertonic.' },
-            { key: 'G', type: 'chord', name: 'major-triad', title: 'G Major', description: 'V - Dominant.' }
+            { key: 'C', type: 'chord', name: 'maj7', title: 'Cmaj7', description: 'I - The tonic, with a jazzy 7th.' },
+            { key: 'A', type: 'chord', name: 'min7', title: 'Am7', description: 'vi - The relative minor 7th.' },
+            { key: 'F', type: 'chord', name: 'maj7', title: 'Fmaj7', description: 'IV - The subdominant 7th.' },
+            { key: 'G', type: 'chord', name: 'dom7', title: 'G7', description: 'V7 - The dominant 7th, leading back to C.' }
         ],
         'take-five': [
-            { key: 'E', type: 'chord', name: 'min7', title: 'E Minor 7', description: 'The ii chord. Use E Dorian.' },
-            { key: 'B', type: 'chord', name: 'min7', title: 'B Minor 7', description: 'The V chord. Use B Mixolydian or B Phrygian Dominant for tension.' }
-        ],
-        'jazz-progressions': [
-            { type: 'scale', name: 'major', title: 'Major Scale', description: 'Foundation of jazz harmony' },
-            { type: 'chord', name: 'maj7', title: 'Major 7th', description: 'Sophisticated major sound' },
-            { type: 'scale', name: 'dorian', title: 'Dorian Mode', description: 'Minor with raised 6th' },
-            { type: 'chord', name: 'min7', title: 'Minor 7th', description: 'Basic minor jazz chord' },
-            { type: 'scale', name: 'mixolydian', title: 'Mixolydian Mode', description: 'Dominant chord scale' },
-            { type: 'chord', name: 'dom7', title: 'Dominant 7th', description: 'Creates tension and movement' },
-            { type: 'interval', name: 'perfect-5th', title: 'Perfect 5th', description: 'Strong harmonic foundation' },
-            { type: 'chord', name: 'half-dim7', title: 'Half Diminished 7th', description: 'Minor 7♭5 chord' },
-            { type: 'scale', name: 'altered', title: 'Altered Scale', description: 'Super Locrian mode' },
-            { type: 'chord', name: 'dim7', title: 'Diminished 7th', description: 'Passing chord favorite' },
-            { type: 'interval', name: 'tritone', title: 'Tritone', description: 'Devil\'s interval creates tension' },
-            { type: 'scale', name: 'bebop-dominant', title: 'Bebop Dominant', description: '8-note scale for dom7 chords' },
-            { type: 'chord', name: 'maj9', title: 'Extended major bebop' },
-            { type: 'scale', name: 'bebop-major', title: 'Bebop Major', description: 'Major scale with chromatic passing tone' },
-            { type: 'chord', name: 'm9', title: 'Rich minor color' },
-            { type: 'interval', name: 'major-7th', title: 'Dreamy, floating interval' },
-            { type: 'scale', name: 'lydian-dominant', title: 'Lydian Dominant', description: 'Fusion exotic scale' },
-            { type: 'chord', name: '11', title: 'Dominant 11th', description: 'Suspended bebop harmony' }
-        ],
-        'blues-journey': [
-            { type: 'scale', name: 'blues', title: 'Blues Scale', description: 'Classic 6-note blues scale' },
-            { type: 'chord', name: 'dom7', title: 'Basic blues chord' },
-            { type: 'scale', name: 'pentatonic-minor', title: 'Minor Pentatonic', description: 'Foundation of blues' },
-            { type: 'interval', name: 'minor-3rd', title: 'Blue note feeling' },
-            { type: 'scale', name: 'pentatonic-major', title: 'Major Pentatonic', description: 'Happy blues sound' },
-            { type: 'chord', name: '7b5', title: '7♭5', description: 'Blues with tension' },
-            { type: 'scale', name: 'minor-blues', title: 'Extended minor blues' },
-            { type: 'interval', name: 'perfect-4th', title: 'Bluesy suspension' },
-            { type: 'chord', name: 'sus4', title: 'Suspended resolution' },
-            { type: 'scale', name: 'pentatonic-blues', title: 'Pentatonic Blues', description: 'Hybrid pentatonic approach' },
-            { type: 'interval', name: 'minor-7th', title: 'Minor 7th', description: 'Dominant 7th color' },
-            { type: 'chord', name: 'add9', title: 'Add9', description: 'Major with 9th added' },
-            { type: 'scale', name: 'dorian', title: 'Dorian', description: 'Minor blues alternative' },
-            { type: 'interval', name: 'major-2nd', title: '9th interval color' },
-            { type: 'chord', name: 'sus2', title: 'Open blues sound' }
-        ],
-        'classical-modes': [
-            { type: 'scale', name: 'ionian', title: 'Ionian Mode', description: 'Major scale, bright and happy' },
-            { type: 'scale', name: 'dorian', title: 'Dorian Mode', description: 'Minor with raised 6th, medieval' },
-            { type: 'scale', name: 'phrygian', title: 'Phrygian Mode', description: 'Minor with flat 2nd, Spanish flavor' },
-            { type: 'scale', name: 'lydian', title: 'Lydian Mode', description: 'Major with raised 4th, ethereal' },
-            { type: 'scale', name: 'mixolydian', title: 'Mixolydian Mode', description: 'Major with flat 7th, folk-like' },
-            { type: 'scale', name: 'aeolian', title: 'Aeolian Mode', description: 'Natural minor, melancholic' },
-            { type: 'scale', name: 'locrian', title: 'Locrian Mode', description: 'Diminished feel, unstable' },
-            { type: 'interval', name: 'unison', title: 'Unison', description: 'Same note, perfect consonance' },
-            { type: 'interval', name: 'major-2nd', title: 'Major 2nd', description: 'Whole step, gentle dissonance' },
-            { type: 'interval', name: 'major-3rd', title: 'Major 3rd', description: 'Happy, bright sound' },
-            { type: 'interval', name: 'perfect-4th', title: 'Perfect 4th', description: 'Open, stable interval' },
-            { type: 'interval', name: 'perfect-5th', title: 'Perfect 5th', description: 'Strong, fundamental harmony' },
-            { type: 'interval', name: 'major-6th', title: 'Major 6th', description: 'Sweet, consonant interval' },
-            { type: 'interval', name: 'major-7th', title: 'Major 7th', description: 'Leading tone, seeks resolution' },
-            { type: 'interval', name: 'octave', title: 'Octave', description: 'Same note class, perfect consonance' },
-            { type: 'chord', name: 'major-triad', title: 'Major Triad', description: 'Basic happy chord' },
-            { type: 'chord', name: 'minor-triad', title: 'Minor Triad', description: 'Basic sad chord' },
-            { type: 'chord', name: 'diminished', title: 'Diminished Triad', description: 'Tense, unstable chord' },
-            { type: 'chord', name: 'augmented', title: 'Augmented Triad', description: 'Mysterious, floating chord' },
-            { type: 'scale', name: 'greek-dorian', title: 'Greek Dorian', description: 'Ancient Greek mode' }
-        ],
-        'rock-pop': [
-            { type: 'scale', name: 'pentatonic-minor', title: 'Minor Pentatonic', description: 'Rock guitar foundation' },
-            { type: 'chord', name: 'major-triad', title: 'Power chord base' },
-            { type: 'scale', name: 'pentatonic-major', title: 'Major Pentatonic', description: 'Country rock flavor' },
-            { type: 'chord', name: 'minor-triad', title: 'Moody rock chord' },
-            { type: 'scale', name: 'blues', title: 'Blues Scale', description: 'Rock with attitude' },
-            { type: 'interval', name: 'perfect-5th', title: 'Perfect 5th', description: 'Power chord interval' },
-            { type: 'chord', name: 'sus4', title: 'Rock suspension chord' },
-            { type: 'scale', name: 'mixolydian', title: 'Mixolydian Mode', description: 'Rock dominant sound' },
-            { type: 'chord', name: 'sus2', title: 'Modern rock sound' },
-            { type: 'interval', name: 'perfect-4th', title: 'Rock melody interval' },
-            { type: 'scale', name: 'dorian', title: 'Dorian Mode', description: 'Progressive rock' },
-            { type: 'chord', name: 'add9', title: 'Add9', description: 'Pop color chord' },
-            { type: 'interval', name: 'major-2nd', title: '9th chord color' },
-            { type: 'chord', name: '6', title: 'Major 6th', description: 'Vintage pop sound' },
-            { type: 'scale', name: 'minor', title: 'Natural Minor', description: 'Dark rock foundation' },
-            { type: 'chord', name: 'dom7', title: 'Dominant 7th', description: 'Rock with edge' },
-            { type: 'interval', name: 'minor-7th', title: 'Minor 7th', description: 'Dominant color' },
-            { type: 'chord', name: 'maj7', title: 'Dreamy pop chord' },
-            { type: 'scale', name: 'major', title: 'Major Scale', description: 'Happy pop foundation' },
-            { type: 'interval', name: 'major-3rd', title: 'Happy interval' }
-        ],
-        'latin-rhythms': [
-            { type: 'scale', name: 'phrygian-dominant', title: 'Phrygian Dominant', description: 'Spanish/Latin flavor' },
-            { type: 'chord', name: 'major-triad', title: 'Bright Latin sound' },
-            { type: 'scale', name: 'harmonic-minor', title: 'Harmonic Minor', description: 'Exotic Latin scale' },
-            { type: 'chord', name: 'augmented', title: 'Augmented Triad', description: 'Mysterious Latin chord' },
-            { type: 'scale', name: 'double-harmonic-major', title: 'Double Harmonic Major', description: 'Byzantine scale' },
-            { type: 'interval', name: 'minor-2nd', title: 'Spanish half-step' },
-            { type: 'scale', name: 'byzantine', title: 'Byzantine Scale', description: 'Eastern Orthodox music' },
-            { type: 'chord', name: 'dim7', title: 'Diminished 7th', description: 'Mediterranean passing chord' },
-            { type: 'scale', name: 'maqam-hijaz', title: 'Maqam Hijaz', description: 'Arabic Mediterranean' },
-            { type: 'chord', name: 'major-triad', title: 'Bright Mediterranean' },
-            { type: 'scale', name: 'spanish-phrygian', title: 'Spanish Phrygian', description: 'Flamenco Mediterranean' },
-            { type: 'interval', name: 'augmented-2nd', title: 'Exotic Mediterranean interval' },
-            { type: 'scale', name: 'flamenco', title: 'Flamenco Scale', description: 'Spanish Mediterranean dance' },
-            { type: 'chord', name: 'dom7', title: 'Dominant 7th', description: 'Mediterranean dominant' },
-            { type: 'scale', name: 'andalusian', title: 'Andalusian Scale', description: 'Southern Spanish' },
-            { type: 'chord', name: 'half-dim7', title: 'Half Diminished 7th', description: 'Complex Mediterranean harmony' },
-            { type: 'scale', name: 'maqam-kurd', title: 'Maqam Kurd', description: 'Kurdish Mediterranean' },
-            { type: 'interval', name: 'tritone', title: 'Tritone', description: 'Mediterranean tension' },
-            { type: 'chord', name: 'min-maj7', title: 'Minor Major 7th', description: 'Mysterious Mediterranean' },
-            { type: 'scale', name: 'gypsy', title: 'Gypsy Scale', description: 'Romani Mediterranean' }
-        ],
-        'celtic-scales': [
-            { type: 'scale', name: 'dorian', title: 'Dorian Mode', description: 'Traditional Celtic sound' },
-            { type: 'chord', name: 'sus4', title: 'Open Celtic chord' },
-            { type: 'scale', name: 'mixolydian', title: 'Mixolydian Mode', description: 'Irish traditional music' },
-            { type: 'interval', name: 'perfect-4th', title: 'Perfect 4th', description: 'Celtic suspension' },
-            { type: 'scale', name: 'pentatonic-major', title: 'Major Pentatonic', description: 'Simple Celtic melody' },
-            { type: 'chord', name: 'sus2', title: 'Airy Celtic sound' },
-            { type: 'scale', name: 'pentatonic-minor', title: 'Melancholic Celtic' },
-            { type: 'interval', name: 'perfect-5th', title: 'Perfect 5th', description: 'Celtic drone interval' },
-            { type: 'chord', name: 'major-triad', title: 'Bright Celtic harmony' },
-            { type: 'scale', name: 'aeolian', title: 'Aeolian Mode', description: 'Natural minor Celtic' },
-            { type: 'chord', name: 'minor-triad', title: 'Sad Celtic ballad' },
-            { type: 'interval', name: 'major-2nd', title: 'Step-wise Celtic melody' },
-            { type: 'scale', name: 'lydian', title: 'Lydian Mode', description: 'Magical Celtic sound' },
-            { type: 'chord', name: 'add9', title: 'Add9', description: 'Modern Celtic color' },
-            { type: 'scale', name: 'major', title: 'Major Scale', description: 'Happy Celtic dance' },
-            { type: 'interval', name: 'minor-3rd', title: 'Minor 3rd', description: 'Celtic minor third' },
-            { type: 'chord', name: '6', title: 'Major 6th', description: 'Sweet Celtic harmony' },
-            { type: 'scale', name: 'minor', title: 'Natural Minor', description: 'Tragic Celtic tale' },
-            { type: 'chord', name: 'add9', title: 'Add9', description: 'Modern Celtic color' },
-            { type: 'interval', name: 'major-6th', title: 'Major 6th', description: 'Celtic major sixth' },
-            { type: 'chord', name: 'maj7', title: 'Dreamy Celtic mist' }
-        ],
-        'eastern-scales': [
-            { type: 'scale', name: 'hirajoshi', title: 'Hirajoshi', description: 'Japanese pentatonic scale' },
-            { type: 'chord', name: 'sus4', title: 'Open Eastern harmony' },
-            { type: 'scale', name: 'japanese-in-sen', title: 'Japanese In Sen', description: 'Traditional Japanese scale' },
-            { type: 'interval', name: 'perfect-4th', title: 'Perfect 4th', description: 'Eastern suspension' },
-            { type: 'scale', name: 'chinese-pentatonic', title: 'Chinese Pentatonic', description: 'Traditional Chinese scale' },
-            { type: 'chord', name: 'sus2', title: 'Open pentatonic sound' },
-            { type: 'scale', name: 'mongolian', title: 'Mongolian Scale', description: 'Central Asian pentatonic' },
-            { type: 'chord', name: 'add9', title: 'Pentatonic with 9th' },
-            { type: 'scale', name: 'blues', title: 'Blues Scale', description: 'Pentatonic with blue note' },
-            { type: 'interval', name: 'major-2nd', title: 'Pentatonic 9th interval' },
-            { type: 'scale', name: 'pentatonic-blues', title: 'Pentatonic Blues', description: 'Hybrid pentatonic blues' },
-            { type: 'chord', name: '6', title: 'Major 6th', description: 'Pentatonic 6th chord' },
-            { type: 'scale', name: 'egyptian', title: 'Egyptian Scale', description: 'Ancient pentatonic variant' },
-            { type: 'interval', name: 'minor-3rd', title: 'Sadness in pentatonic' },
-            { type: 'chord', name: 'm6', title: 'Minor 6th', description: 'Minor pentatonic 6th' },
-            { type: 'interval', name: 'perfect-4th', title: 'Pentatonic sus4 interval' }
-        ],
-        'modern-jazz': [
-            { type: 'scale', name: 'altered', title: 'Altered Scale', description: 'Super locrian for altered chords' },
-            { type: 'chord', name: '7b5', title: '7♭5', description: 'Altered dominant chord' },
-            { type: 'scale', name: 'whole-tone', title: 'Whole Tone', description: 'Impressionistic jazz scale' },
-            { type: 'chord', name: 'augmented', title: 'Augmented Triad', description: 'Mysterious jazz chord' },
-            { type: 'scale', name: 'diminished', title: 'Diminished Scale', description: 'Symmetrical jazz scale' },
-            { type: 'chord', name: 'dim7', title: 'Diminished 7th', description: 'Passing chord in jazz' },
-            { type: 'scale', name: 'half-whole-diminished', title: 'Half-Whole Diminished', description: 'For dominant 7♭9' },
-            { type: 'chord', name: 'dom7b9', title: 'Dom7♭9', description: 'Dominant with flat 9' },
-            { type: 'scale', name: 'whole-half-diminished', title: 'Whole-Half Diminished', description: 'For diminished chords' },
-            { type: 'chord', name: 'diminished', title: 'Diminished Triad', description: 'Two minor 3rds' },
-            { type: 'interval', name: 'minor-3rd', title: 'Minor 3rd', description: 'Diminished building block' },
-            { type: 'chord', name: 'half-dim7', title: 'Half Diminished 7th', description: 'Minor 7♭5' },
-            { type: 'scale', name: 'locrian', title: 'Locrian Mode', description: 'Natural diminished mode' },
-            { type: 'chord', name: 'min7b5', title: 'Minor 7th ♭5', description: 'Same as half diminished' },
-            { type: 'interval', name: 'tritone', title: 'Tritone', description: 'Diminished 5th' },
-            { type: 'chord', name: 'dom7#9', title: 'Dom7#9', description: 'Hendrix chord' },
-            { type: 'scale', name: 'super-locrian', title: 'Super Locrian', description: 'Altered scale' },
-            { type: 'chord', name: 'alt7', title: 'Altered 7th', description: 'All alterations' },
-            { type: 'interval', name: 'augmented-4th', title: 'Augmented 4th', description: 'Same as tritone' },
-            { type: 'chord', name: 'dom7b5', title: 'Dom7♭5', description: 'Dominant flat 5' },
-            { type: 'scale', name: 'octatonic', title: 'Octatonic Scale', description: 'Eight-note diminished' },
-            { type: 'chord', name: 'dim-maj7', title: 'Diminished Major 7th', description: 'Rare diminished chord' },
-            { type: 'interval', name: 'diminished-5th', title: 'Flat 5 interval' },
-            { type: 'chord', name: 'fully-diminished', title: 'Fully Diminished 7th', description: 'All minor 3rds' }
-        ],
-        'whole-tone-world': [
-            { type: 'scale', name: 'whole-tone', title: 'Whole Tone Scale', description: 'Only whole steps' },
-            { type: 'chord', name: 'augmented', title: 'Augmented Triad', description: 'Whole tone harmony' },
-            { type: 'interval', name: 'major-3rd', title: 'Major 3rd', description: 'Two whole steps' },
-            { type: 'chord', name: 'suspended-aug', title: 'Suspended Augmented', description: 'Sus with aug 5th' }
+            { key: 'E', type: 'chord', name: '9', title: 'E9', description: 'The classic funk chord. Use E Dorian.' },
+            { key: 'E', type: 'scale', name: 'dorian', title: 'E Dorian', description: 'Cool and sophisticated minor for funk.' },
+            { key: 'A', type: 'chord', name: 'dom7', title: 'A7', description: 'The IV chord. A Mixolydian works well.' },
+            { key: 'A', type: 'scale', name: 'mixolydian', title: 'A Mixolydian', description: 'Adds a bluesy feel to the IV chord.' },
+            { key: 'E', type: 'scale', name: 'pentatonic-minor', title: 'E Minor Pentatonic', description: 'You can always fall back on the pentatonic.' }
         ],
         'jazz-standards-starter': [
-            { key: 'D', type: 'chord', name: 'min7', title: 'Dm7 (ii)', description: 'The ii chord. Use D Dorian.' },
-            { key: 'D', type: 'scale', name: 'dorian', title: 'D Dorian', description: 'The scale for the Dm7 chord.' },
-            { key: 'G', type: 'chord', name: 'dom7', title: 'G7 (V)', description: 'The V chord. Use G Mixolydian or G Altered.' },
-            { key: 'G', type: 'scale', name: 'mixolydian', title: 'G Mixolydian', description: 'The basic scale for the G7 chord.' },
-            { key: 'C', type: 'chord', name: 'maj7', title: 'Cmaj7 (I)', description: 'The I chord. Use C Ionian (Major).' },
-            { key: 'C', type: 'scale', name: 'major', title: 'C Major', description: 'The scale for the Cmaj7 chord.' },
-            { key: 'A', type: 'chord', name: 'min7', title: 'Am7 (vi)', description: 'The vi chord. Use A Aeolian.' },
-            { key: 'A', type: 'scale', name: 'aeolian', title: 'A Aeolian', description: 'The natural minor scale.' }
+            { key: 'D', type: 'chord', name: 'min7', title: 'Dm7 (ii)', description: 'The start of a ii-V-I in C Major.' },
+            { key: 'G', type: 'chord', name: 'dom7', title: 'G7 (V)', description: 'The dominant leading to the tonic.' },
+            { key: 'C', type: 'chord', name: 'maj7', title: 'Cmaj7 (I)', description: 'Resolution in C Major.' },
+            { key: 'G', type: 'chord', name: 'min7', title: 'Gm7 (ii)', description: 'The start of a ii-V-I in F Major.' },
+            { key: 'C', type: 'chord', name: 'dom7', title: 'C7 (V)', description: 'The dominant leading to F.' },
+            { key: 'F', type: 'chord', name: 'maj7', title: 'Fmaj7 (I)', description: 'Resolution in F Major.' }
+        ],
+        'jazz-progressions': [
+            { key: 'D', type: 'scale', name: 'dorian', title: 'Dorian', description: 'Common scale for the ii chord in a ii-V-I.' },
+            { key: 'G', type: 'scale', name: 'mixolydian', title: 'Mixolydian', description: 'Standard scale for the V chord.' },
+            { key: 'C', type: 'scale', name: 'ionian', title: 'Ionian (Major)', description: 'The resolution scale for the I chord.' },
+            { key: 'G', type: 'scale', name: 'altered', title: 'Altered Scale', description: 'Adds maximum tension over a V7 chord (G7alt).' },
+            { key: 'C', type: 'scale', name: 'lydian', title: 'Lydian', description: 'A modern sound for the I chord (Cmaj7#11).' }
+        ],
+        'blues-journey': [
+            { key: 'E', type: 'scale', name: 'pentatonic-minor', title: 'Minor Pentatonic', description: 'The foundation of blues soloing.' },
+            { key: 'E', type: 'scale', name: 'blues', title: 'Blues Scale', description: 'Adds the "blue note" (b5) for more flavor.' },
+            { key: 'E', type: 'scale', name: 'pentatonic-major', title: 'Major Pentatonic', description: 'A sweeter, more melodic sound for a major blues.' },
+            { key: 'E', type: 'scale', name: 'mixolydian', title: 'Mixolydian Mode', description: 'Outlines the dominant 7th sound of a blues I chord.' },
+            { key: 'E', type: 'scale', name: 'dorian', title: 'Dorian Mode', description: 'A jazzy, sophisticated sound for a minor blues.' }
+        ],
+        'classical-modes': [
+            { key: 'C', type: 'scale', name: 'ionian', title: 'Ionian (Major)', description: '1st mode: Bright and happy. The standard major scale.' },
+            { key: 'D', type: 'scale', name: 'dorian', title: 'Dorian', description: '2nd mode: Minor with a raised 6th. Jazzy and cool.' },
+            { key: 'E', type: 'scale', name: 'phrygian', title: 'Phrygian', description: '3rd mode: Minor with a lowered 2nd. Dark and Spanish-sounding.' },
+            { key: 'F', type: 'scale', name: 'lydian', title: 'Lydian', description: '4th mode: Major with a raised 4th. Dreamy and magical.' },
+            { key: 'G', type: 'scale', name: 'mixolydian', title: 'Mixolydian', description: '5th mode: Major with a lowered 7th. Bluesy and dominant.' },
+            { key: 'A', type: 'scale', name: 'aeolian', title: 'Aeolian (Natural Minor)', description: '6th mode: The standard natural minor scale.' },
+            { key: 'B', type: 'scale', name: 'locrian', title: 'Locrian', description: '7th mode: Minor with a lowered 2nd and 5th. Tense and unstable.' }
+        ],
+        'rock-pop': [
+            { key: 'C', type: 'scale', name: 'major', title: 'Major Scale', description: 'The foundation for most pop melodies.' },
+            { key: 'A', type: 'scale', name: 'minor', title: 'Natural Minor Scale', description: 'For sadder or more dramatic songs.' },
+            { key: 'C', type: 'scale', name: 'pentatonic-major', title: 'Major Pentatonic', description: 'A simple, foolproof scale for happy solos.' },
+            { key: 'A', type: 'scale', name: 'pentatonic-minor', title: 'Minor Pentatonic', description: 'The workhorse of rock guitar solos.' },
+            { key: 'A', type: 'scale', name: 'blues', title: 'Blues Scale', description: 'Adds a gritty, soulful edge to rock and pop.' }
+        ],
+        'latin-rhythms': [
+            { key: 'G', type: 'scale', name: 'mixolydian', title: 'Mixolydian', description: 'Common in Salsa and Latin Rock.' },
+            { key: 'D', type: 'scale', name: 'dorian', title: 'Dorian', description: 'Used in Bossa Nova and Latin Jazz.' },
+            { key: 'E', type: 'scale', name: 'phrygian-dominant', title: 'Phrygian Dominant', description: 'The characteristic sound of Flamenco and Latin music.' },
+            { key: 'C', type: 'scale', name: 'major', title: 'Major Scale', description: 'The basis for many cheerful Latin pop tunes.' },
+            { key: 'A', type: 'scale', name: 'minor', title: 'Natural Minor', description: 'For dramatic tangos and boleros.' }
+        ],
+        'celtic-scales': [
+            { key: 'G', type: 'scale', name: 'mixolydian', title: 'Mixolydian', description: 'Very common in Irish and Scottish folk tunes.' },
+            { key: 'D', type: 'scale', name: 'dorian', title: 'Dorian', description: 'Another staple of Celtic music, giving a melancholic feel.' },
+            { key: 'C', type: 'scale', name: 'ionian', title: 'Ionian (Major)', description: 'Used for upbeat jigs and reels.' },
+            { key: 'G', type: 'scale', name: 'pentatonic-major', title: 'Major Pentatonic', description: 'A simple 5-note scale found in many folk traditions.' },
+            { key: 'E', type: 'scale', name: 'aeolian', title: 'Aeolian (Minor)', description: 'For sad airs and laments.' }
+        ],
+        'eastern-scales': [
+            { key: 'C', type: 'scale', name: 'hirajoshi', title: 'Hirajoshi (Japanese)', description: 'An exotic Japanese pentatonic scale.' },
+            { key: 'C', type: 'scale', name: 'byzantine', title: 'Byzantine (Double Harmonic)', description: 'A scale with two augmented seconds, giving a strong Middle Eastern feel.' },
+            { key: 'C', type: 'scale', name: 'persian', title: 'Persian Scale', description: 'Another dramatic and exotic Middle Eastern scale.' },
+            { key: 'C', type: 'scale', name: 'chinese-pentatonic', title: 'Chinese Pentatonic', description: 'The same as the major pentatonic, central to Chinese music.' },
+            { key: 'C', type: 'scale', name: 'indian-raga-bhairav', title: 'Indian Raga (Bhairav)', description: 'A morning raga with a distinct mood.' }
+        ],
+        'modern-jazz': [
+            { key: 'G', type: 'scale', name: 'altered', title: 'Altered Scale (Super Locrian)', description: 'Creates maximum tension over a V7 chord.' },
+            { key: 'F', type: 'scale', name: 'lydian-dominant', title: 'Lydian Dominant', description: 'A bright, modern sound for a non-resolving dominant chord.' },
+            { key: 'C', type: 'scale', name: 'whole-tone', title: 'Whole Tone Scale', description: 'A six-note scale with a dreamy, ambiguous sound.' },
+            { key: 'C', type: 'scale', name: 'diminished', title: 'Diminished (W-H)', description: 'A symmetrical scale perfect for navigating diminished chords.' },
+            { key: 'C', type: 'scale', name: 'melodic-minor', title: 'Melodic Minor', description: 'The "jazz minor," a key source for modern harmony and improvisation.' }
+        ],
+        'folk-traditions': [
+            { key: 'C', type: 'scale', name: 'major', title: 'Major (Ionian)', description: 'The basis for many Western folk songs.' },
+            { key: 'G', type: 'scale', name: 'mixolydian', title: 'Mixolydian', description: 'Common in Appalachian and British folk music.' },
+            { key: 'D', type: 'scale', name: 'dorian', title: 'Dorian', description: 'Found in Irish, Scottish, and English folk.' },
+            { key: 'A', type: 'scale', name: 'minor', title: 'Natural Minor (Aeolian)', description: 'For melancholic folk ballads.' },
+            { key: 'C', type: 'scale', name: 'pentatonic-major', title: 'Major Pentatonic', description: 'A universal scale in folk music worldwide.' }
+        ],
+        'bebop-essentials': [
+            { key: 'C', type: 'scale', name: 'bebop-major', title: 'Bebop Major', description: 'A major scale with a passing tone for smooth 8th-note lines.' },
+            { key: 'G', type: 'scale', name: 'bebop-minor', title: 'Bebop Minor', description: 'A dorian scale with a passing tone, for ii7 chords.' }
+        ],
+        'fusion-elements': [
+            { key: 'D', type: 'scale', name: 'dorian', title: 'Dorian', description: 'A staple mode for fusion improvisation.' },
+            { key: 'G', type: 'scale', name: 'mixolydian', title: 'Mixolydian', description: 'For dominant chord vamps with a rock edge.' },
+            { key: 'F', type: 'scale', name: 'lydian-dominant', title: 'Lydian Dominant', description: 'A modern, bright sound over dominant chords.' },
+            { key: 'C', type: 'scale', name: 'pentatonic-minor', title: 'Minor Pentatonic', description: 'Often used with wider intervals and chromatic passing tones.' },
+            { key: 'C', type: 'scale', name: 'whole-tone', title: 'Whole Tone', description: 'For creating floating, outside-the-box textures.' }
+        ],
+        'gospel-soul': [
+            { key: 'C', type: 'scale', name: 'major', title: 'Major Scale', description: 'The foundation for gospel harmony.' },
+            { key: 'C', type: 'scale', name: 'pentatonic-major', title: 'Major Pentatonic', description: 'For soulful vocal melodies and instrumental fills.' },
+            { key: 'A', type: 'scale', name: 'blues', title: 'Blues Scale', description: 'Adds the essential "blue note" grit and emotion.' },
+            { key: 'G', type: 'scale', name: 'mixolydian', title: 'Mixolydian', description: 'Used over the V chord for that classic gospel turnaround.' },
+            { key: 'D', type: 'scale', name: 'dorian', title: 'Dorian', description: 'A common sound for the ii chord in gospel progressions.' }
+        ],
+        'country-western': [
+            { key: 'G', type: 'scale', name: 'major', title: 'Major Scale', description: 'The basis for most classic country songs.' },
+            { key: 'G', type: 'scale', name: 'pentatonic-major', title: 'Major Pentatonic', description: 'The primary scale for country guitar licks.' },
+            { key: 'G', type: 'scale', name: 'blues', title: 'Blues Scale', description: 'Mixed with major pentatonic for a "hot" country sound.' }
+        ],
+        'mediterranean': [
+            { key: 'E', type: 'scale', name: 'phrygian-dominant', title: 'Phrygian Dominant', description: 'The quintessential Spanish and Flamenco sound.' },
+            { key: 'C', type: 'scale', name: 'double-harmonic-major', title: 'Double Harmonic Major', description: 'Also known as the Byzantine scale, with a strong Middle Eastern flavor.' },
+            { key: 'A', type: 'scale', name: 'harmonic-minor', title: 'Harmonic Minor', description: 'Used in Greek and Eastern European folk music.' },
+            { key: 'D', type: 'scale', name: 'dorian', title: 'Dorian', description: 'Common in Greek folk music.' }
+        ],
+        'pentatonic-world': [
+            { key: 'C', type: 'scale', name: 'pentatonic-major', title: 'Major Pentatonic', description: 'Found in Western, African, and East Asian music.' },
+            { key: 'A', type: 'scale', name: 'pentatonic-minor', title: 'Minor Pentatonic', description: 'The relative minor, equally widespread.' },
+            { key: 'C', type: 'scale', name: 'hirajoshi', title: 'Hirajoshi', description: 'A Japanese pentatonic scale with a unique, evocative sound.' },
+            { key: 'C', type: 'scale', name: 'egyptian', title: 'Egyptian', description: 'A suspended-sounding pentatonic scale.' },
+            { key: 'F', type: 'scale', name: 'lydian-pentatonic', title: 'Lydian Pentatonic', description: 'A bright, open-sounding 5-note scale.' }
+        ],
+        'chromatic-journey': [
+            { key: 'C', type: 'scale', name: 'major', title: 'Major Scale', description: 'Diatonic starting point (7 notes).' },
+            { key: 'C', type: 'scale', name: 'bebop-major', title: 'Bebop Major', description: 'Adding one chromatic passing tone (8 notes).' },
+            { key: 'C', type: 'scale', name: 'diminished', title: 'Diminished Scale', description: 'A symmetrical scale (8 notes).' },
+            { key: 'C', type: 'scale', name: 'blues', title: 'Blues Scale', description: 'A hexatonic (6-note) scale with chromaticism.' },
+            { key: 'C', type: 'scale', name: 'chromatic', title: 'Chromatic Scale', description: 'The destination: all 12 notes.' }
+        ],
+        'harmonic-minor-family': [
+            { key: 'A', type: 'scale', name: 'harmonic-minor', title: 'Harmonic Minor', description: '1st mode: The parent scale. Minor with a major 7th.' },
+            { key: 'B', type: 'scale', name: 'locrian-natural-6', title: 'Locrian Natural 6', description: '2nd mode: Dark and tense with a surprising major 6th.' },
+            { key: 'C', type: 'scale', name: 'ionian-augmented', title: 'Ionian #5', description: '3rd mode: A major scale with a sharp 5th.' },
+            { key: 'D', type: 'scale', name: 'ukrainian-dorian', title: 'Ukrainian Dorian', description: '4th mode: Dorian with a sharp 4th. A unique, folky sound.' },
+            { key: 'E', type: 'scale', name: 'phrygian-dominant', title: 'Phrygian Dominant', description: '5th mode: The most popular mode. Spanish/metal flavor.' },
+            { key: 'F', type: 'scale', name: 'lydian-sharp-2', title: 'Lydian #2', description: '6th mode: A bright Lydian sound with a sharp 2nd.' },
+            { key: 'G', type: 'scale', name: 'super-locrian-bb7', title: 'Altered Dominant bb7', description: '7th mode: Extremely altered and tense.' }
+        ],
+        'melodic-minor-family': [
+            { key: 'C', type: 'scale', name: 'melodic-minor', title: 'Melodic Minor (Jazz Minor)', description: '1st mode: Minor with a major 6th and 7th.' },
+            { key: 'D', type: 'scale', name: 'dorian-b2', title: 'Dorian b2', description: '2nd mode: Dorian with a flat 2nd. A dark but smooth sound.' },
+            { key: 'E', type: 'scale', name: 'lydian-augmented', title: 'Lydian Augmented', description: '3rd mode: Lydian with a sharp 5th. Very bright and spacey.' },
+            { key: 'F', type: 'scale', name: 'lydian-dominant', title: 'Lydian Dominant', description: '4th mode: Mixolydian with a sharp 4th. A modern jazz staple.' },
+            { key: 'G', type: 'scale', name: 'mixolydian-b6', title: 'Mixolydian b6', description: '5th mode: A dominant scale with a minor 6th. A darker dominant sound.' },
+            { key: 'A', type: 'scale', name: 'locrian-natural-2', title: 'Half-Diminished', description: '6th mode: The perfect scale for min7(b5) chords.' },
+            { key: 'B', type: 'scale', name: 'altered', title: 'Altered Scale (Super Locrian)', description: '7th mode: The ultimate tension scale for V7 chords.' }
+        ],
+        'diminished-concepts': [
+            { key: 'C', type: 'scale', name: 'diminished', title: 'Diminished (W-H)', description: 'Starts with a whole step. Fits Cdim7 chords.' },
+            { key: 'C', type: 'scale', name: 'half-whole-diminished', title: 'Diminished (H-W)', description: 'Starts with a half step. Fits C7(b9) chords.' },
+            { key: 'C', type: 'chord', name: 'dim7', title: 'Diminished 7th Chord', description: 'A stack of minor thirds, a symmetrical chord.' },
+            { key: 'C', type: 'chord', name: '7b5', title: 'Dominant 7th b5', description: 'A chord often associated with diminished sounds.' }
+        ],
+        'whole-tone-world': [
+            { key: 'C', type: 'scale', name: 'whole-tone', title: 'Whole Tone Scale', description: 'A 6-note scale of only whole steps. Dreamy and ambiguous.' },
+            { key: 'C', type: 'chord', name: 'augmented', title: 'Augmented Triad', description: 'A triad built from the whole tone scale.' },
+            { key: 'C', type: 'chord', name: 'dom7', title: 'C7#5', description: 'An altered dominant chord derived from the whole tone scale.' },
+            { key: 'D', type: 'scale', name: 'whole-tone', title: 'The "Other" Whole Tone Scale', description: 'There are only two unique whole tone scales. This is the other one.' }
         ],
         'blues-improvisation-toolkit': [
             { key: 'E', type: 'chord', name: 'dom7', title: 'E7 (I)', description: 'The I chord in a blues. Use E Blues or E Mixolydian.' },
@@ -871,7 +998,9 @@ document.addEventListener('DOMContentLoaded', () => {
             { key: 'F', type: 'chord', name: 'maj7', title: 'Fmaj7', description: 'The IV chord. Use F Lydian for a brighter sound.' },
             { key: 'F', type: 'scale', name: 'lydian', title: 'F Lydian', description: 'The #11 adds sophistication.' },
             { key: 'D', type: 'chord', name: 'min7', title: 'Dm7', description: 'The ii chord. Dorian is a smooth choice.' },
-            { key: 'G', type: 'chord', name: 'dom7', title: 'G7', description: 'The V chord. Classic Mixolydian.' }
+            { key: 'D', type: 'scale', name: 'dorian', title: 'D Dorian Scale', description: 'Minor scale with a major 6th.' },
+            { key: 'G', type: 'chord', name: 'dom7', title: 'G7', description: 'The V chord. Classic Mixolydian.' },
+            { key: 'G', type: 'scale', name: 'mixolydian', title: 'G Mixolydian Scale', description: 'Major scale with a flat 7th.' }
         ],
         'country-twang': [
             { key: 'A', type: 'chord', name: 'major-triad', title: 'A Major', description: 'The I chord. A Major Pentatonic is your best friend.' },
@@ -880,30 +1009,6 @@ document.addEventListener('DOMContentLoaded', () => {
             { key: 'A', type: 'scale', name: 'blues', title: 'A Blues Scale', description: 'Add the b3 for a bluesy country feel.' },
             { key: 'E', type: 'chord', name: 'dom7', title: 'E7', description: 'The V chord. Target the chord tones.' },
             { key: 'E', type: 'scale', name: 'mixolydian', title: 'E Mixolydian', description: 'The perfect scale to outline the V7 sound.' }
-        ],
-        'cinematic-soundscapes': [
-            { key: 'C', type: 'chord', name: 'minor-triad', title: 'C Minor', description: 'A dramatic opening. Use C Aeolian.' },
-            { key: 'C', type: 'scale', name: 'aeolian', title: 'C Aeolian', description: 'The natural minor for a somber mood.' },
-            { key: 'A', type: 'chord', name: 'augmented', title: 'Ab Augmented', description: 'A mysterious, floating sound.' },
-            { key: 'A', type: 'scale', name: 'whole-tone', title: 'Ab Whole Tone', description: 'A dreamy, unresolved scale.' },
-            { key: 'F', type: 'chord', name: 'maj7', title: 'Fmaj7#11', description: 'A wide, open, magical chord.' },
-            { key: 'F', type: 'scale', name: 'lydian', title: 'F Lydian', description: 'The quintessential scale for wonder and awe.' }
-        ],
-        'gospel-harmonies': [
-            { key: 'C', type: 'chord', name: 'maj9', title: 'Cmaj9 (I)', description: 'A rich tonic chord.' },
-            { key: 'C', type: 'scale', name: 'major', title: 'C Major', description: 'Use the major scale with added color tones.' },
-            { key: 'F', type: 'chord', name: 'maj9', title: 'Fmaj9 (IV)', description: 'A beautiful, lush subdominant.' },
-            { key: 'F', type: 'scale', name: 'lydian', title: 'F Lydian', description: 'Adds the #4/11 for a classic gospel sound.' },
-            { key: 'G', type: 'chord', name: '13', title: 'G13 (V)', description: 'The dominant chord with all the extensions.' },
-            { key: 'G', type: 'scale', name: 'mixolydian', title: 'G Mixolydian', description: 'The foundation for dominant chords.' }
-        ],
-        'reggae-rhythms': [
-            { key: 'A', type: 'chord', name: 'major-triad', title: 'A Major', description: 'The I chord, played on the upbeats.' },
-            { key: 'A', type: 'scale', name: 'major', title: 'A Major', description: 'Simple, happy melodies.' },
-            { key: 'D', type: 'chord', name: 'major-triad', title: 'D Major', description: 'The IV chord. Keep it bright.' },
-            { key: 'A', type: 'scale', name: 'pentatonic-major', title: 'A Major Pentatonic', description: 'Great for fills and solos.' },
-            { key: 'E', type: 'chord', name: 'major-triad', title: 'E Major', description: 'The V chord, strong and sunny.' },
-            { key: 'E', type: 'scale', name: 'mixolydian', title: 'E Mixolydian', description: 'The b7 adds a relaxed, groovy feel.' }
         ],
         'ambient-textural': [
             { key: 'D', type: 'chord', name: 'sus2', title: 'Dsus2', description: 'Open and spacious. Use D Ionian or Lydian.' },
@@ -932,36 +1037,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentBeat = 0;
 
     // Slideshow controls
-    const slideshowSelect = document.getElementById('slideshow-select');
-    const slideshowMeasures = document.getElementById('slideshow-measures');
-    const slideshowBpm = document.getElementById('slideshow-bpm');
-    
-    const slideshowProgressFill = document.getElementById('slideshow-progress-fill');
-    const slideshowCounter = document.getElementById('slideshow-counter');
-    const currentItemName = document.getElementById('current-item-name');
-    const currentItemDescription = document.getElementById('current-item-description');
-    const slideshowTranspose = document.getElementById('slideshow-transpose');
-
-    // Add collapsible functionality for slideshow
-    const slideshowHeader = document.getElementById('slideshow-header');
-    const slideshowContent = document.getElementById('slideshow-content');
-    const slideshowCollapseIcon = slideshowHeader.querySelector('.collapse-icon');
-
-    slideshowHeader.addEventListener('click', () => {
-        slideshowContent.classList.toggle('collapsed');
-        slideshowCollapseIcon.classList.toggle('rotated');
-    });
-
-    function getSlideDurationMs() {
-        // This function is now less relevant as duration is handled by the beat timer.
-        // It's kept for potential future use or alternative timing models.
-        const currentSlide = currentSlideshow ? currentSlideshow[currentSlideIndex] : null;
-        const measures = (currentSlide && currentSlide.measures) ? parseInt(currentSlide.measures, 10) : (parseInt(slideshowMeasures.value, 10) || 2);
-        const bpm = parseInt(slideshowBpm.value, 10) || 120;
-        const beatsPerMeasure = 4; // Assuming 4/4 time signature
-        const duration = (measures * beatsPerMeasure * 60 * 1000) / bpm;
-        return duration;
-    }
 
     function updateSlideshowSpeedDisplay() {
         const speed = parseFloat(slideshowBpm.value);
@@ -973,6 +1048,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const transposeValue = parseInt(slideshowTranspose.value, 10);
         const originalSlideshow = SLIDESHOWS[slideshowSelect.value];
+
+        // Add a check to ensure the slideshow exists and is an array
+        if (!originalSlideshow || !Array.isArray(originalSlideshow)) {
+            console.error("Slideshow data not found or is not an array for:", slideshowSelect.value);
+            alert("This slideshow is not yet implemented.");
+            return;
+        }
         
         if (transposeValue > 0 && transposeValue < 12) {
             currentSlideshow = originalSlideshow.map(slide => ({
@@ -985,10 +1067,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         isPlaying = true;
         slideshowPlay.disabled = true;
-        slideshowPlayHidden.disabled = true;
-        slideshowPause.disabled = false;
         slideshowStop.disabled = false;
-        slideshowStopHidden.disabled = false;
         
         currentSlideIndex = 0;
         currentBeat = 0; // Start at beat 0, will be updated to 1 on first tick.
@@ -1014,7 +1093,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Use per-slide measures if available, otherwise use global setting
             const measuresPerSlide = (currentSlide && currentSlide.measures) 
                 ? parseInt(currentSlide.measures, 10) 
-                : (parseInt(slideshowMeasures.value, 10) || 2);
+                : 2; // Default to 2 measures if not specified
 
             const beatsPerMeasure = 4; // Assuming 4/4 time
             const totalBeatsPerSlide = measuresPerSlide * beatsPerMeasure;
@@ -1040,7 +1119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Use per-slide measures if available, otherwise use global setting
         const measuresPerSlide = (currentSlide && currentSlide.measures)
             ? parseInt(currentSlide.measures, 10)
-            : (parseInt(slideshowMeasures.value, 10) || 2);
+            : 2; // Default to 2 measures if not specified
 
         const beatsPerMeasure = 4;
         
@@ -1054,8 +1133,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function pauseSlideshow() {
         isPlaying = false;
         slideshowPlay.disabled = false;
-        slideshowPlayHidden.disabled = false;
-        slideshowPause.disabled = true;
         
         if (slideshowTimer) {
             clearInterval(slideshowTimer);
@@ -1068,21 +1145,15 @@ document.addEventListener('DOMContentLoaded', () => {
         
         isPlaying = false;
         slideshowPlay.disabled = false;
-        slideshowPlayHidden.disabled = false;
-        slideshowPause.disabled = true;
         slideshowStop.disabled = true;
-        slideshowStopHidden.disabled = true;
         
         currentSlideIndex = 0;
         currentBeat = 0;
         currentSlideshow = null;
         
         // Reset display
-        slideshowProgressFill.style.width = '0%';
-        slideshowCounter.textContent = '0 / 0';
-        currentItemName.textContent = 'Ready to start slideshow';
-        currentItemDescription.textContent = 'Select a theme and press play';
         slideshowTimeRemaining.textContent = ''; // Clear countdown display
+        if (slideshowItemDescription) slideshowItemDescription.textContent = ''; // Clear description
         
         // Clear all visible notes
         const notes = fretboard.querySelectorAll('.note');
@@ -1093,6 +1164,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function previousSlide() {
+        // Not exposed in UI after removing detailed section, but keeping for completeness
         if (!currentSlideshow) return;
         
         currentSlideIndex = (currentSlideIndex - 1 + currentSlideshow.length) % currentSlideshow.length;
@@ -1104,6 +1176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function nextSlide() {
+        // Not exposed in UI after removing detailed section, but keeping for completeness
         if (!currentSlideshow) return;
         
         currentSlideIndex = (currentSlideIndex + 1) % currentSlideshow.length;
@@ -1134,15 +1207,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update scale/chord selection
         scaleSelect.value = slide.name;
         
-        // Update display
-        const progress = ((currentSlideIndex + 1) / currentSlideshow.length) * 100;
-        slideshowProgressFill.style.width = `${progress}%`;
-        slideshowCounter.textContent = `${currentSlideIndex + 1} / ${currentSlideshow.length}`;
-        currentItemName.textContent = `${selectedKey} ${slide.title}`;
-        currentItemDescription.textContent = slide.description;
+        // Update current selection display
+        updateCurrentSelectionDisplay();
         
         // Update fretboard
         updateNoteClasses();
+
+        // Update the description display
+        if (slideshowItemDescription) {
+            slideshowItemDescription.textContent = slide.description || '';
+        }
         
         // Show all scale notes if toggle is enabled
         if (toggleAllNotes.checked) {
@@ -1158,75 +1232,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function startSlideshowTimer() {
-        if (slideshowTimer) {
-            clearInterval(slideshowTimer);
-        }
-        
-        const speed = getSlideDurationMs();
-        slideshowTimer = setInterval(() => {
-            if (isPlaying) {
-                nextSlide();
-            }
-        }, speed);
-    }
-
-    function startCountdownDisplay() {
-        if (countdownInterval) {
-            clearInterval(countdownInterval);
-        }
-        
-        slideshowTimeRemaining.textContent = `${(slideDurationMs / 1000).toFixed(0)}s`;
-        
-        countdownInterval = setInterval(() => {
-            const elapsedTime = performance.now() - currentSlideStartTime;
-            const remaining = Math.max(0, (slideDurationMs - elapsedTime) / 1000);
-            slideshowTimeRemaining.textContent = `${Math.ceil(remaining)}s`;
-            
-            // If remaining time is zero or less, clear the countdown interval
-            // and ensure the display shows "0s". The main slideshowTimer
-            // will handle advancing the slide.
-            if (remaining <= 0) {
-                clearInterval(countdownInterval);
-                countdownInterval = null; // Clear the reference
-                slideshowTimeRemaining.textContent = '0s'; 
-            }
-        }, 100); // Update every 100ms for smoother countdown
-    }
-
     // Event listeners for slideshow controls
     slideshowPlay.addEventListener('click', playSlideshow);
-    slideshowPlayHidden.addEventListener('click', playSlideshow);
-    slideshowPause.addEventListener('click', pauseSlideshow);
     slideshowStop.addEventListener('click', stopSlideshow);
-    slideshowStopHidden.addEventListener('click', stopSlideshow);
-    slideshowPrev.addEventListener('click', previousSlide);
-    slideshowNext.addEventListener('click', nextSlide);
 
     slideshowSelect.addEventListener('change', () => {
-        slideshowSelectHiddenMain.value = slideshowSelect.value;
-        const hiddenSelect = document.getElementById('slideshow-select-hidden');
-        if (hiddenSelect) hiddenSelect.value = slideshowSelect.value;
         if (isPlaying) {
             stopSlideshow();
         }
+        updateBaseKeyDisplay();
     });
 
-    // Sync other selects back to the main one
-    slideshowSelectHiddenMain.addEventListener('change', () => {
-        slideshowSelect.value = slideshowSelectHiddenMain.value;
-        slideshowSelect.dispatchEvent(new Event('change'));
-    });
-    const hiddenSlideshowSelect = document.getElementById('slideshow-select-hidden');
-    if (hiddenSlideshowSelect) {
-        hiddenSlideshowSelect.addEventListener('change', () => {
-             slideshowSelect.value = hiddenSlideshowSelect.value;
-             slideshowSelect.dispatchEvent(new Event('change'));
-        });
+    function updateBaseKeyDisplay() {
+        const selectedSlideshow = slideshowSelect.value;
+        if (selectedSlideshow && SLIDESHOWS[selectedSlideshow] && SLIDESHOWS[selectedSlideshow].length > 0) {
+            const firstKey = SLIDESHOWS[selectedSlideshow][0].key;
+            slideshowBaseKey.value = firstKey;
+        } else {
+            slideshowBaseKey.value = 'N/A';
+        }
     }
 
     // Stop slideshow if timing or transpose value is changed
-    [slideshowMeasures, slideshowBpm, slideshowTranspose].forEach(input => {
+    [slideshowBpm, slideshowTranspose].forEach(input => {
         input.addEventListener('change', () => {
             if (isPlaying) {
                 stopSlideshow();
@@ -1236,10 +1264,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Initialize slideshow controls
-    slideshowPause.disabled = true;
     slideshowStop.disabled = true;
-    slideshowStopHidden.disabled = true;
     slideshowTimeRemaining.textContent = ''; // Initially empty
+    updateBaseKeyDisplay(); // Call on load
 
     // --- Quiz Logic ---
     function startQuiz() {
@@ -1256,7 +1283,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function stopQuiz() {
-        location.reload();
+        location.reload(); // Simple way to reset state
     }
 
     function generateNewQuestion() {
@@ -1303,13 +1330,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // 4. Generate question and answers
         let questionText, correctAnswer, options;
         if (currentQuizType === 'note-name') {
-            questionText = `This note is the "${targetIntervalName}" of ${selectedKey}. What note is it?`;
+            questionText = `This note is the "${targetIntervalName}" of ${getEnharmonicDisplay(selectedKey)}. What note is it?`;
             questionNoteElement.textContent = targetIntervalName; // Show interval on the note
-            correctAnswer = targetNoteName;
-            options = generateOptions(correctAnswer, CHROMATIC_SCALE);
+            correctAnswer = getEnharmonicDisplay(targetNoteName);
+            const allPossibleDisplayNotes = CHROMATIC_SCALE.map(n => getEnharmonicDisplay(n));
+            options = generateOptions(correctAnswer, allPossibleDisplayNotes);
         } else { // 'interval'
-            questionText = `This note is "${targetNoteName}". What is its interval in the ${selectedKey} ${selectedScaleName.replace(/-/g, ' ')} scale?`;
-            questionNoteElement.textContent = targetNoteName; // Show note name on the note
+            questionText = `This note is "${getEnharmonicDisplay(targetNoteName)}". What is its interval in the ${getEnharmonicDisplay(selectedKey)} ${selectedScaleName.replace(/-/g, ' ')} scale?`;
+            questionNoteElement.textContent = getEnharmonicDisplay(targetNoteName); // Show note name on the note
             correctAnswer = targetIntervalName;
             const allIntervalNames = scaleIntervals.map(i => intervalNames[i]);
             options = generateOptions(correctAnswer, allIntervalNames);
@@ -1394,13 +1422,28 @@ document.addEventListener('DOMContentLoaded', () => {
         return CHROMATIC_SCALE[newIndex];
     }
 
-    function getScaleNotes(key, scaleName) {
+    function getScaleNotes(key, scaleName, preferFlat = false) {
         if (!SCALES[scaleName]) return [];
-        const keyIndex = CHROMATIC_SCALE.indexOf(key);
+        
+        const referenceScale = preferFlat ? CHROMATIC_SCALE_FLATS : CHROMATIC_SCALE_SHARPS;
+        let keyIndex = referenceScale.indexOf(key);
+
+        if (keyIndex === -1) {
+            // If key isn't in the preferred scale, find its equivalent
+            const equivalentKey = ENHARMONIC_MAP[key] || key;
+            keyIndex = referenceScale.indexOf(equivalentKey);
+        }
+
+        if (keyIndex === -1) {
+            // Fallback to sharp scale if still not found
+            keyIndex = CHROMATIC_SCALE_SHARPS.indexOf(key);
+            if (keyIndex === -1) return []; // Should not happen with valid keys
+        }
+        
         const scaleIntervals = SCALES[scaleName];
         return scaleIntervals.map(interval => {
             const noteIndex = (keyIndex + interval) % 12;
-            return CHROMATIC_SCALE[noteIndex];
+            return referenceScale[noteIndex];
         });
     }
 
@@ -1416,8 +1459,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Remove existing classes
             note.classList.remove('in-scale', 'root');
             
-            if (selectedScale === 'chromatic') {
-                // All notes are "in scale" for chromatic
+            if (selectedScale === 'chromatic' || (document.body.className.includes('preset-chromatic-') && !document.body.className.includes('root'))) {
                 note.classList.add('in-scale');
             } else if (scaleNotes.includes(noteName)) {
                 note.classList.add('in-scale');
@@ -1444,6 +1486,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const nut = document.createElement('div');
     nut.className = 'nut';
     fretboard.appendChild(nut);
+
+    function displayFretNumbers() {
+        fretNumbersDisplay.innerHTML = ''; // Clear existing numbers
+    
+        const fretboardOffsetWidth = fretboard.offsetWidth;
+        const NUT_WIDTH_PX = 18;
+        const effectiveFretboardWidth = fretboardOffsetWidth - NUT_WIDTH_PX;
+    
+        const fretsToShowNumbers = [3, 5, 7, 9, 12, 15];
+    
+        fretsToShowNumbers.forEach(fretNum => {
+            const label = document.createElement('div');
+            label.className = 'fret-number-label';
+            label.textContent = fretNum;
+    
+            // Position the label in the middle of the fret space
+            const leftPos = ((fretNum - 0.5) / NUM_FRETS) * effectiveFretboardWidth;
+            label.style.left = `${leftPos}px`;
+            
+            fretNumbersDisplay.appendChild(label);
+        });
+    }
 
     for (let i = 1; i <= NUM_FRETS; i++) {
         const fret = document.createElement('div');
@@ -1510,8 +1574,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const intervalSol = (noteIndexSol - keyIndexSol + 12) % 12;
                 return SOLFEGE_CHROMATIC[intervalSol];
             
-            default: // 'note-names'
+            case 'note-names-sharp':
+                // Our internal representation is sharp-based, so just return it.
                 return noteName;
+            
+            case 'note-names-flat':
+                // Return the flat equivalent if it exists, otherwise the natural note.
+                return ENHARMONIC_MAP[noteName] || noteName;
+
+            default: // 'note-names' (mixed)
+                return getEnharmonicDisplay(noteName);
         }
     }
 
@@ -1568,14 +1640,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Create Strings and Notes ---
-    for (let i = 0; i < TUNING.length; i++) {
-        const string = document.createElement('div');
-        string.className = 'string';
-        const stringThickness = 1.5 + i * 0.5;
-        string.style.height = `${stringThickness}px`;
-        string.style.top = `calc(${((i + 0.5) / TUNING.length) * 100}% - ${stringThickness / 2}px)`;
-        fretboard.appendChild(string);
-    }
+    rebuildStrings();
     
     // Initial note creation
     rebuildFretboard();
@@ -1593,8 +1658,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Remove existing classes
             note.classList.remove('in-scale', 'root');
             
-            if (selectedScale === 'chromatic') {
-                // All notes are "in scale" for chromatic
+            if (selectedScale === 'chromatic' || (document.body.className.includes('preset-chromatic-') && !document.body.className.includes('root'))) {
                 note.classList.add('in-scale');
             } else if (scaleNotes.includes(noteName)) {
                 note.classList.add('in-scale');
@@ -1621,10 +1685,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    noteDisplayType.addEventListener('change', () => {
+        updateNoteDisplay();
+    });
+
     keySelect.addEventListener('change', () => {
         if (isQuizActive) {
             generateNewQuestion();
         } else {
+            // Clear all visible notes when key changes, similar to scale change
+            const notes = fretboard.querySelectorAll('.note');
+            notes.forEach(note => note.classList.remove('visible'));
+
             updateNoteClasses();
             updateNoteDisplay();
             updateCurrentSelectionDisplay(); 
@@ -1689,6 +1761,51 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // --- Fretboard View Preset Logic ---
+    fretboardViewSelect.addEventListener('change', (e) => {
+        const view = e.target.value;
+        const startFrets = document.querySelectorAll('.start-fret');
+        const endFrets = document.querySelectorAll('.end-fret');
+
+        const setAllFretRanges = (start, end) => {
+            startFrets.forEach(input => input.value = start);
+            endFrets.forEach(input => input.value = end);
+        };
+        
+        const setStringFretRange = (stringIndex, start, end) => {
+            const startInput = document.querySelector(`.start-fret[data-string="${stringIndex}"]`);
+            const endInput = document.querySelector(`.end-fret[data-string="${stringIndex}"]`);
+            if (startInput && endInput) {
+                startInput.value = start;
+                endInput.value = end;
+            }
+        };
+
+        // Reset all to a "hidden" state before applying the view
+        // A start > end range will cause no notes to be rendered for that string
+        setAllFretRanges(1, 0);
+
+        if (view === 'full-fretboard') {
+            setAllFretRanges(0, 15);
+        } else if (view.startsWith('frets-')) {
+            const [start, end] = view.replace('frets-', '').split('-').map(Number);
+            setAllFretRanges(start, end);
+        } else if (view.startsWith('string-')) {
+            const stringNum = parseInt(view.replace('string-', ''), 10);
+            // String 6 is index 5, String 1 is index 0
+            const stringIndex = 6 - stringNum;
+            setStringFretRange(stringIndex, 0, 15);
+        } else if (view.startsWith('strings-')) {
+            const stringNums = view.replace('strings-', '').split('').map(Number);
+            stringNums.forEach(stringNum => {
+                const stringIndex = 6 - stringNum;
+                setStringFretRange(stringIndex, 0, 15);
+            });
+        }
+
+        rebuildFretboard();
+    });
+
     // Add event listeners for tuning changes
     const tuningSelects = document.querySelectorAll('.tuning-select');
     tuningSelects.forEach(select => {
@@ -1712,18 +1829,27 @@ document.addEventListener('DOMContentLoaded', () => {
         fretboard.style.backgroundImage = `url('${e.target.value}')`;
     });
 
+    function rebuildStrings() {
+        // Clear existing strings
+        fretboard.querySelectorAll('.string').forEach(s => s.remove());
+
+        // Re-create strings based on current TUNING
+        const baseWidth = parseFloat(stringWidthSlider.value);
+        for (let i = 0; i < TUNING.length; i++) {
+            const string = document.createElement('div');
+            string.className = 'string';
+            const stringThickness = baseWidth + i * (baseWidth * 0.3); // Thicker for lower strings
+            string.style.height = `${stringThickness}px`;
+            string.style.top = `calc(${((i + 0.5) / TUNING.length) * 100}% - ${stringThickness / 2}px)`;
+            fretboard.appendChild(string);
+        }
+    }
+
     function updateStringWidths() {
         const baseWidth = parseFloat(stringWidthSlider.value);
         document.documentElement.style.setProperty('--string-base-width', `${baseWidth}px`);
         stringWidthValue.textContent = `${baseWidth}px`;
-        
-        // Update individual string thicknesses
-        const strings = fretboard.querySelectorAll('.string');
-        strings.forEach((string, i) => {
-            const stringThickness = baseWidth + i * (baseWidth * 0.3);
-            string.style.height = `${stringThickness}px`;
-            string.style.top = `calc(${((i + 0.5) / TUNING.length) * 100}% - ${stringThickness / 2}px)`;
-        });
+        rebuildStrings();
     }
 
     function updateFretWidth() {
@@ -1788,67 +1914,143 @@ document.addEventListener('DOMContentLoaded', () => {
         noteSizeValue.textContent = `${noteSize}px`;
     }
 
-    function displayFretNumbers() {
-        fretNumbersDisplay.innerHTML = ''; 
-        const fretboardWidth = fretboard.offsetWidth; 
-        const effectiveFretboardWidth = fretboardWidth - NUT_WIDTH_PX;
+    // Set default note display
+    noteDisplayType.value = 'intervals';
+    updateNoteDisplay();
 
-        for (let i = 1; i <= NUM_FRETS; i++) {
-            const fretNumberLabel = document.createElement('div');
-            fretNumberLabel.className = 'fret-number-label';
-            fretNumberLabel.textContent = i;
+    function updateTuningControls() {
+        const fretRangeContentDiv = document.getElementById('fret-range-content');
+        const stringControlsContainer = fretRangeContentDiv.querySelector('.string-controls');
+        stringControlsContainer.innerHTML = ''; // Clear existing controls
+        const numStrings = TUNING.length;
 
-            // Calculate position to center under the fret *space*
-            const leftPos = NUT_WIDTH_PX + ((i - 0.5) * (effectiveFretboardWidth / NUM_FRETS));
-            fretNumberLabel.style.left = `${leftPos}px`;
+        TUNING.slice().reverse().forEach((note, index) => {
+            const originalIndex = TUNING.length - 1 - index;
+            const stringControlDiv = document.createElement('div');
+            stringControlDiv.className = 'string-control';
+            stringControlDiv.dataset.string = originalIndex;
 
-            fretNumbersDisplay.appendChild(fretNumberLabel);
-        }
+            const label = document.createElement('label');
+             // Dynamic labels based on instrument type
+            const presetKey = instrumentSelect.value;
+            let stringNames = [];
+            if (presetKey.includes('guitar')) {
+                 stringNames = ['Low E', 'A', 'D', 'G', 'B', 'High E', 'Low B'];
+                 if (presetKey.includes('7')) {
+                     label.textContent = `${stringNames[index]} (${note}):`;
+                 } else {
+                     label.textContent = `${stringNames[index]} (${note}):`;
+                 }
+            } else if (presetKey.includes('bass')) {
+                stringNames = ['Low B', 'E', 'A', 'D', 'G'];
+                if (presetKey.includes('5')) {
+                    label.textContent = `${stringNames[index]} (${note}):`;
+                } else {
+                    label.textContent = `${stringNames[index + 1]} (${note}):`;
+                }
+            } else if (presetKey.includes('ukulele')) {
+                stringNames = ['G', 'C', 'E', 'A'];
+                label.textContent = `String ${stringNames[index]} (${note}):`;
+            }
+             else { // Default to string numbers
+                 label.textContent = `String ${TUNING.length - index} (${note}):`;
+            }
+
+            const tuningSelect = document.createElement('select');
+            tuningSelect.className = 'tuning-select';
+            tuningSelect.dataset.string = originalIndex;
+            ALL_NOTES.forEach(n => {
+                const option = document.createElement('option');
+                option.value = n;
+                option.textContent = n;
+                if (n === note) option.selected = true;
+                tuningSelect.appendChild(option);
+            });
+            tuningSelect.addEventListener('change', () => {
+                rebuildFretboard();
+            });
+
+            const startFretInput = document.createElement('input');
+            startFretInput.type = 'number';
+            startFretInput.className = 'start-fret';
+            startFretInput.min = 0;
+            startFretInput.max = 15;
+            startFretInput.value = 0;
+            startFretInput.dataset.string = originalIndex;
+
+            const toSpan = document.createElement('span');
+            toSpan.textContent = 'to';
+
+            const endFretInput = document.createElement('input');
+            endFretInput.type = 'number';
+            endFretInput.className = 'end-fret';
+            endFretInput.min = 0;
+            endFretInput.max = 15;
+            endFretInput.value = 15;
+            endFretInput.dataset.string = originalIndex;
+            
+            [startFretInput, endFretInput].forEach(input => {
+                input.addEventListener('change', () => {
+                     // Ensure start <= end
+                    if (parseInt(startFretInput.value) > parseInt(endFretInput.value)) {
+                        if (input.classList.contains('start-fret')) {
+                            endFretInput.value = startFretInput.value;
+                        } else {
+                            startFretInput.value = endFretInput.value;
+                        }
+                    }
+                    rebuildFretboard();
+                });
+            });
+
+            stringControlDiv.append(label, tuningSelect, startFretInput, toSpan, endFretInput);
+            stringControlsContainer.appendChild(stringControlDiv);
+        });
     }
 
-    // Add event listeners for new controls
-    stringWidthSlider.addEventListener('input', updateStringWidths);
-    fretWidthSlider.addEventListener('input', updateFretWidth);
-    noteSizeSlider.addEventListener('input', updateNoteSize);
-    noteColorPreset.addEventListener('change', updateNoteColorPreset);
-    inlayColorInput.addEventListener('input', updateInlayColor); 
-    noteDisplayType.addEventListener('change', () => {
-        updateNoteDisplay();
-    });
-    fretColorInput.addEventListener('input', updateFretColor);
-    stringColorInput.addEventListener('input', updateStringColor);
-    noteFontColorInput.addEventListener('input', updateNoteFontColor); 
-    noteFontSelect.addEventListener('change', updateNoteFont);
-    pageThemeSelect.addEventListener('change', (e) => {
-        document.body.className = ''; 
-        if (e.target.value !== 'dark-mode') {
-            document.body.classList.add(e.target.value);
+    instrumentSelect.addEventListener('change', (e) => {
+        const preset = TUNING_PRESETS[e.target.value];
+        if (preset) {
+            TUNING = preset.tuning;
+            rebuildStrings();
+            updateTuningControls();
+            rebuildFretboard();
+            fretboardViewSelect.value = "full-fretboard"; // Reset view
         }
-        // re-apply note color preset class
-        updateNoteColorPreset();
-        updateInlayColor(); 
     });
-    noteShapeSelect.addEventListener('change', rebuildFretboard); 
 
-    // Initialize new controls
-    updateStringWidths();
-    updateFretWidth();
-    updateNoteSize();
-    updateNoteColorPreset();
-    updateInlayColor(); 
-    updateFretColor();
-    updateStringColor();
-    updateNoteFontColor(); 
-    updateNoteFont();
+    numStringsSelect.addEventListener('change', (e) => {
+        const numStrings = parseInt(e.target.value, 10);
+        switch(numStrings) {
+            case 4:
+                TUNING = ['G', 'D', 'A', 'E']; // Bass EADG, high to low
+                break;
+            case 5:
+                TUNING = ['G', 'D', 'A', 'E', 'B']; // 5-string Bass BEADG, high to low
+                break;
+            case 7:
+                TUNING = ['E', 'B', 'G', 'D', 'A', 'E', 'B']; // 7-string Guitar BEADGBE, high to low
+                break;
+            case 6:
+            default:
+                TUNING = ['E', 'B', 'G', 'D', 'A', 'E']; // Standard Guitar EADGBe
+                break;
+        }
 
-    // Initialize scale highlighting
-    updateNoteClasses();
-    
+        rebuildStrings();
+        updateTuningControls();
+        rebuildFretboard();
+        fretboardViewSelect.value = "full-fretboard"; // Reset view
+    });
+
+
     // Function to update the current selection display text
     function updateCurrentSelectionDisplay() {
         let displayString = "";
         let intervalString = "";
-        let noteString = "";
+        let noteStringSharp = "";
+        let noteStringFlat = "";
+
         const selectedKey = keySelect.value;
         const selectedOption = scaleSelect.options[scaleSelect.selectedIndex];
         const selectedOptionText = selectedOption.textContent;
@@ -1858,30 +2060,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (isPlaying && currentSlideshow && currentSlideshow[currentSlideIndex]) {
             const slide = currentSlideshow[currentSlideIndex];
-            const displayKey = slide.key || selectedKey;
-            displayString = `${displayKey} ${slide.title}`;
-            currentKeyForNotes = displayKey;
+            currentKeyForNotes = slide.key || selectedKey;
+            const humanReadableName = getHumanReadableName(slide.name);
+            const keyDisplay = ENHARMONIC_MAP[currentKeyForNotes] ? `${currentKeyForNotes}/${ENHARMONIC_MAP[currentKeyForNotes]}` : currentKeyForNotes;
+            displayString = `${keyDisplay} ${humanReadableName}`;
             currentScaleNameForNotes = slide.name;
         } else {
-            const selectedScaleName = scaleSelect.value;
-            if (selectedScaleName === "") {
-                displayString = selectedOptionText;
+            currentKeyForNotes = selectedKey;
+            currentScaleNameForNotes = scaleSelect.value;
+            if (currentScaleNameForNotes === "") {
+                displayString = "Ready to select a scale or chord";
             } else {
-                displayString = `${selectedKey} ${selectedOptionText}`;
-                if (selectedOption.closest('optgroup')?.label === 'Scales' && selectedScaleName !== 'chromatic') {
-                    displayString += ' Scale';
+                const keyDisplay = ENHARMONIC_MAP[currentKeyForNotes] ? `${currentKeyForNotes}/${ENHARMONIC_MAP[currentKeyForNotes]}` : currentKeyForNotes;
+                displayString = `${keyDisplay} ${selectedOptionText}`;
+                if (selectedOption.closest('optgroup')?.label.includes('Scale') && currentScaleNameForNotes !== 'chromatic') {
+                     // The logic to add ' Scale' suffix can be refined or removed if text content is sufficient
                 }
             }
-            currentKeyForNotes = selectedKey;
-            currentScaleNameForNotes = selectedScaleName;
         }
         
         intervalString = getIntervalString(currentScaleNameForNotes);
-        noteString = getNoteString(currentKeyForNotes, currentScaleNameForNotes);
+        noteStringSharp = getNoteString(currentKeyForNotes, currentScaleNameForNotes, false);
+        noteStringFlat = getNoteString(currentKeyForNotes, currentScaleNameForNotes, true);
         
         currentSelectionDisplay.textContent = displayString;
         currentSelectionIntervals.textContent = intervalString;
-        currentSelectionNotes.textContent = noteString;
+
+        // Hide or show based on content
+        if (noteStringSharp && noteStringFlat && noteStringSharp !== noteStringFlat) {
+            currentSelectionNotesEnharmonicSharp.textContent = noteStringSharp;
+            currentSelectionNotesEnharmonicFlat.textContent = noteStringFlat;
+            currentSelectionNotesEnharmonicSharp.style.display = 'block';
+            currentSelectionNotesEnharmonicFlat.style.display = 'block';
+        } else {
+            currentSelectionNotesEnharmonicSharp.textContent = noteStringSharp || noteStringFlat;
+            currentSelectionNotesEnharmonicSharp.style.display = 'block';
+            currentSelectionNotesEnharmonicFlat.style.display = 'none';
+        }
+    }
+
+    function getHumanReadableName(value) {
+        const option = scaleSelect.querySelector(`option[value="${value}"]`);
+        return option ? option.textContent : value.replace(/-/g, ' ');
     }
 
     // Function to get interval names for a scale
@@ -1892,60 +2112,152 @@ document.addEventListener('DOMContentLoaded', () => {
         const scaleIntervals = SCALES[scaleName];
 
         if (scaleIntervals.length === 1 && scaleIntervals[0] === 0) {
-            return '(R)';
+            return 'R';
         }
 
-        return `(${scaleIntervals.map(i => intervalNames[i]).join('-')})`;
+        return scaleIntervals.map(i => intervalNames[i]).join('-');
     }
 
     // Function to get note names for a scale
-    function getNoteString(key, scaleName) {
-        if (!SCALES[scaleName] || scaleName === 'chromatic') return '';
-        const scaleNotes = getScaleNotes(key, scaleName);
-        if (scaleNotes.length === 1 && SCALES[scaleName][0] === 0) {
-            return `(${scaleNotes[0]})`;
+    function getNoteString(key, scaleName, preferFlat = false) {
+        if (!SCALES[scaleName] || scaleName === 'chromatic' || scaleName === "") return '';
+        
+        const scaleNotes = getScaleNotes(key, scaleName, preferFlat);
+        
+        if (scaleNotes.length === 0) return '';
+        
+        // Determine the key's display name based on the sharp/flat preference
+        let keyDisplay;
+        if (preferFlat) {
+            keyDisplay = ENHARMONIC_MAP[key] || key;
+        } else {
+            // Find the sharp name for a flat key if it exists
+            const sharpKey = Object.keys(ENHARMONIC_MAP).find(k => ENHARMONIC_MAP[k] === key);
+            keyDisplay = sharpKey || key;
         }
-        return `(${scaleNotes.join('-')})`;
+        
+        const noteList = scaleNotes.join('-');
+        
+        return `${keyDisplay}: (${noteList})`;
     }
 
     // Initial note creation and display update
-    updateCurrentSelectionDisplay();
+    rebuildFretboard();
 
-    // --- Modal Logic --- (Functionality removed, but listeners kept to avoid errors if HTML is not fully cleaned up)
-    if (openModalBtn) {
-        openModalBtn.addEventListener('click', () => {
-            if (modalFretboardContent) {
-                 // Clear previous content
-                modalFretboardContent.innerHTML = '';
-                
-                // Clone the fretboard and its fret numbers display
-                const fretboardClone = fretboard.cloneNode(true);
-                const fretNumbersClone = fretNumbersDisplay.cloneNode(true);
-                
-                // Append clones to the modal
-                modalFretboardContent.appendChild(fretboardClone);
-                modalFretboardContent.appendChild(fretNumbersClone);
+    // --- Controls ---
+    toggleAllNotes.addEventListener('change', (e) => {
+        const selectedScale = scaleSelect.value;
+        const selectedKey = keySelect.value;
+        const scaleNotes = getScaleNotes(selectedKey, selectedScale);
+        
+        const notes = fretboard.querySelectorAll('.note');
+        notes.forEach(note => {
+            const noteName = note.dataset.note;
+            
+            // Remove existing classes
+            note.classList.remove('in-scale', 'root');
+            
+            if (selectedScale === 'chromatic' || (document.body.className.includes('preset-chromatic-') && !document.body.className.includes('root'))) {
+                note.classList.add('in-scale');
+            } else if (scaleNotes.includes(noteName)) {
+                note.classList.add('in-scale');
             }
-            if(modal) modal.style.display = 'flex';
+            
+            // Mark root notes
+            if (noteName === selectedKey) {
+                note.classList.add('root');
+            }
+
+            // During quiz, only the question note should be visible
+            if (isQuizActive && !note.classList.contains('visible')) {
+                note.classList.remove('in-scale', 'root');
+            }
+            
+            if (e.target.checked && scaleNotes.includes(noteName)) {
+                note.classList.add('visible');
+            } else if (!e.target.checked) {
+                // Don't hide the quiz question note
+                if (!isQuizActive || (isQuizActive && !nextQuestionBtn.classList.contains('hidden'))) {
+                    note.classList.remove('visible');
+                }
+            }
         });
-    }
-    
-    if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', () => {
-            if(modal) modal.style.display = 'none';
-        });
-    }
-    
-    window.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            if(modal) modal.style.display = 'none';
+    });
+
+    // --- Event Listeners for UI Controls ---
+
+    noteColorPreset.addEventListener('change', () => {
+        updateNoteColorPreset();
+        updateNoteClasses(); // Re-apply classes to reflect new colors
+    });
+
+    pageThemeSelect.addEventListener('change', (e) => {
+        const theme = e.target.value;
+        // Find any existing theme or preset classes and remove them
+        const classList = Array.from(document.body.classList);
+        for (const cls of classList) {
+            if (cls.endsWith('-mode') || cls.startsWith('preset-')) {
+                document.body.classList.remove(cls);
+            }
+        }
+        
+        // Add the new page theme
+        document.body.classList.add(theme);
+
+        // Re-apply the note color preset class
+        const currentPreset = noteColorPreset.value;
+        if (currentPreset !== 'default') {
+            document.body.classList.add(`preset-${currentPreset}`);
         }
     });
+
+
+    // --- Modal Logic ---
+    openFretboardControlsBtn.addEventListener('click', () => {
+        controlsModal.style.display = 'flex';
+    });
+    
+    closeControlsModalBtn.addEventListener('click', () => {
+        controlsModal.style.display = 'none';
+    });
+    
+    // --- Custom Themes Modal Logic ---
+    openCustomThemesBtn.addEventListener('click', () => {
+        customThemesModal.style.display = 'flex';
+    });
+    
+    closeCustomThemesModalBtn.addEventListener('click', () => {
+        customThemesModal.style.display = 'none';
+    });
+
+    // --- Fret Range Modal Logic ---
+    openFretRangeBtn.addEventListener('click', () => {
+        fretRangeModal.style.display = 'flex';
+    });
+
+    closeFretRangeModalBtn.addEventListener('click', () => {
+        fretRangeModal.style.display = 'none';
+    });
+
+    window.addEventListener('click', (event) => {
+        if (event.target === controlsModal) {
+            controlsModal.style.display = 'none';
+        }
+        if (event.target === customThemesModal) {
+            customThemesModal.style.display = 'none';
+        }
+        if (event.target === fretRangeModal) {
+            fretRangeModal.style.display = 'none';
+        }
+    });
+
+    // Initialize tuning controls on load
+    updateTuningControls();
 
     // --- CSV Import/Export Logic ---
     const CSV_HEADERS = ['key', 'type', 'name', 'description', 'measures'];
 
-    const IMPORTED_SLIDESHOW_CSV_CONTENT = `key,type,name,description
+    const IMPORTED_SLIDESHOW_CSV_CONTENT = `key,type,name,description,measures
 C,scale,major,C Major Scale
 D,scale,minor,D Natural Minor Scale
 E,chord,dom7,E Dominant 7th Chord
@@ -1985,20 +2297,6 @@ E,scale,whole-half-diminished,E Whole-Half Diminished Scale
 B,scale,bebop-dominant,B Bebop Dominant Scale
 D,scale,bebop-major,D Bebop Major Scale
 E,scale,bebop-minor,E Bebop Minor Scale
-F#,scale,minor-pentatonic,F# Minor Pentatonic Scale
-G,scale,minor-pentatonic-add-2,G Minor Pentatonic Add 2 Scale
-A,scale,augmented-pentatonic,A Augmented Pentatonic Scale
-B,scale,diminished-pentatonic,B Diminished Pentatonic Scale
-C,scale,whole-tone-pentatonic,C Whole Tone Pentatonic Scale
-D,scale,lydian-pentatonic,D Lydian Pentatonic Scale
-E,scale,mixolydian-pentatonic,E Mixolydian Pentatonic Scale
-F#,scale,phrygian-pentatonic,F# Phrygian Pentatonic Scale
-G,scale,locrian-pentatonic,G Locrian Pentatonic Scale
-A,scale,harmonic-minor-pentatonic,A Harmonic Minor Pentatonic Scale
-B,scale,melodic-minor-pentatonic,B Melodic Minor Pentatonic Scale
-C,scale,bebop-dominant-alt,C Bebop Dominant Alt Scale
-D,scale,bebop-major-alt,D Bebop Major Alt Scale
-E,scale,bebop-minor-alt,E Bebop Minor Alt Scale
 F#,scale,blues-bebop,F# Blues Bebop Scale
 G,scale,dorian-bebop,G Dorian Bebop Scale
 A,scale,lydian-bebop,A Lydian Bebop Scale
@@ -2013,72 +2311,20 @@ B,scale,augmented-diminished,B Augmented Diminished Scale
 C,scale,lydian-phrygian,C Lydian Phrygian Scale
 D,scale,mixolydian-lydian,D Mixolydian Lydian Scale
 E,scale,phrygian-locrian,E Phrygian Locrian Scale
-F#,scale,ionian-flat-5,F# Ionian Flat 5 Scale
-G,scale,aeolian-sharp-7,G Aeolian Sharp 7 Scale
-A,scale,dorian-flat-4,A Dorian Flat 4 Scale
-B,scale,lydian-flat-2,B Lydian Flat 2 Scale
-C,scale,mixolydian-sharp-5,C Mixolydian Sharp 5 Scale
-D,scale,locrian-sharp-4,D Locrian Sharp 4 Scale
-E,scale,major-minor-scale,E Major Minor Scale
-F#,scale,persian-augmented,F# Persian Augmented Scale
-G,scale,romanian-major,G Romanian Major Scale
-A,scale,ukrainian-major,A Ukrainian Major Scale
-B,scale,hungarian-major-alt,B Hungarian Major Alt Scale
-C#,scale,enigmatic-harmonic,C# Enigmatic Harmonic Scale
-D#,scale,whole-tone-major,D# Whole Tone Major Scale
-F,scale,diminished-major,F Diminished Major Scale
-G#,scale,chromatic-minor,G# Chromatic Minor Scale
-A#,scale,pentatonic-hybrid,A# Pentatonic Hybrid Scale
-B,scale,diminished-whole-tone,B Diminished Whole Tone Scale
-C,scale,half-diminished-scale,C Half Diminished Scale
-D,scale,jazz-diminished,D Jazz Diminished Scale
-E,scale,major-b2,E Major Flat 2 Scale
-F#,scale,lydian-b3,F# Lydian Flat 3 Scale
-G,scale,mixolydian-b5,G Mixolydian Flat 5 Scale
-A,scale,phrygian-b4,A Phrygian Flat 4 Scale
-B,scale,major-b6,B Major Flat 6 Scale
-C#,scale,minor-b2,C# Minor Flat 2 Scale
-D#,scale,major-b7,D# Major Flat 7 Scale
-F,scale,minor-b5,F Minor Flat 5 Scale
-G#,scale,major-b3,G# Major Flat 3 Scale
-A#,scale,minor-b4,A# Minor Flat 4 Scale
-B,scale,major-b9,B Major Flat 9 Scale
-C,scale,minor-b9,C Minor Flat 9 Scale
-D,scale,major-b13,D Major Flat 13 Scale
-E,scale,minor-b13,E Minor Flat 13 Scale
-F#,scale,major-sharp-4-sharp-5,F# Major Sharp 4 Sharp 5 Scale
-G,scale,minor-sharp-4,G Minor Sharp 4 Scale
-A,scale,dominant-sharp-9,A Dominant Sharp 9 Scale
-B,scale,dominant-flat-9-flat-5,B Dominant Flat 9 Flat 5 Scale
-C,scale,lydian-major,C Lydian Major Scale
-D,scale,mixolydian-minor,D Mixolydian Minor Scale
-E,scale,phrygian-major,E Phrygian Major Scale
-F#,scale,locrian-minor,F# Locrian Minor Scale
-G,scale,gypsy-harmonic,G Gypsy Harmonic Scale
-A,scale,hungarian-major-minor,A Hungarian Major Minor Scale
-B,scale,romanian-major-minor,B Romanian Major Minor Scale
-C#,scale,ukrainian-major-minor,C# Ukrainian Major Minor Scale
-D#,scale,flamenco-dominant,D# Flamenco Dominant Scale
-F,scale,andalusian-minor,F Andalusian Minor Scale
-G#,scale,maqam-hijaz-kar,G# Maqam Hijaz Kar Scale
-A#,scale,maqam-kurd-major,A# Maqam Kurd Major Scale
-B,scale,overtone-augmented,B Overtone Augmented Scale
-C,scale,scriabin-augmented,C Scriabin Augmented Scale
-D,scale,petrushka-whole-tone,D Petrushka Whole Tone Scale
-E,scale,octatonic,E Octatonic Scale
-F#,scale,balinese-pelog,F# Balinese Pelog Scale
-G,scale,egyptian,G Egyptian Scale
-A,scale,ethiopian,A Ethiopian Scale
-B,scale,jewish-major,B Jewish Major Scale
-C#,scale,klezmer-major,C# Klezmer Major Scale
-D#,scale,todi-raga-major,D# Todi Raga Major Scale
-F,scale,marva-raga-major,F Marva Raga Major Scale
-G#,scale,purvi-raga-major,G# Purvi Raga Major Scale
-A#,scale,augmented-whole-tone,A# Augmented Whole Tone Scale
-B,scale,bebop-augmented,B Bebop Augmented Scale
-C,scale,chromatic-octatonic,C Chromatic Octatonic Scale
-D,scale,double-diminished,D Double Diminished Scale
-E,scale,lydian-flat-5,E Lydian Flat 5 Scale
+F,scale,minor-pentatonic,F Minor Pentatonic Scale
+G,scale,minor-pentatonic-add-2,G Minor Pentatonic Add 2 Scale
+A,scale,minor-pentatonic-add-4,A Minor Pentatonic Add 4 Scale
+B,scale,minor-pentatonic-add-5,B Minor Pentatonic Add 5 Scale
+C,scale,minor-pentatonic-add-6,C Minor Pentatonic Add 6 Scale
+D,scale,minor-pentatonic-add-7,D Minor Pentatonic Add 7 Scale
+E,scale,minor-pentatonic-add-8,E Minor Pentatonic Add 8 Scale
+F#,scale,minor-pentatonic-add-9,F# Minor Pentatonic Add 9 Scale
+G,scale,minor-pentatonic-add-10,G Minor Pentatonic Add 10 Scale
+A,scale,minor-pentatonic-add-11,A Minor Pentatonic Add 11 Scale
+B,scale,minor-pentatonic-add-12,B Minor Pentatonic Add 12 Scale
+C,scale,minor-pentatonic-add-13,C Minor Pentatonic Add 13 Scale
+F#,scale,minor-pentatonic-add-14,F# Minor Pentatonic Add 14 Scale
+G,scale,minor-pentatonic-add-15,G Minor Pentatonic Add 15 Scale
 `;
 
     function parseCSV(csvContent) {
@@ -2158,4 +2404,180 @@ E,scale,lydian-flat-5,E Lydian Flat 5 Scale
         link.click();
         document.body.removeChild(link);
     });
+
+    downloadAllDefinitionsBtn.addEventListener('click', () => {
+        const csvRows = ['type,name,intervals'];
+
+        for (const [name, intervals] of Object.entries(SCALES)) {
+            let type = 'scale'; // Default type
+            if (ALL_CHORDS_NAMES.includes(name)) {
+                type = 'chord';
+            } else if (ALL_INTERVALS_NAMES.includes(name)) {
+                type = 'interval';
+            }
+
+            const intervalString = getIntervalString(name);
+            csvRows.push(`${type},${name},"${intervalString}"`);
+        }
+
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "all_definitions.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    // Export elements
+    const exportKeyDiagramsBtn = document.getElementById('export-key-diagrams-btn');
+    const exportStatusOverlay = document.getElementById('export-status-overlay');
+    const exportStatusMessage = document.getElementById('export-status-message');
+    const exportAllKeysDiagramsBtn = document.getElementById('export-all-keys-diagrams-btn');
+
+    // --- Export to ZIP functionality ---
+
+    function showExportStatus(message) {
+        exportStatusMessage.textContent = message;
+        exportStatusOverlay.classList.remove('hidden');
+    }
+
+    function hideExportStatus() {
+        exportStatusOverlay.classList.add('hidden');
+    }
+
+    function getDiagramList() {
+        const diagramsToExport = [];
+        const optgroups = scaleSelect.querySelectorAll('optgroup');
+        optgroups.forEach(optgroup => {
+            // Exclude custom slideshows from batch export
+            if (optgroup.label === 'Custom Slideshows') {
+                return;
+            }
+            const options = optgroup.querySelectorAll('option');
+            options.forEach(option => {
+                if (option.value) {
+                    let type = 'Scale'; // default
+                    if (optgroup.label.includes('Chord')) {
+                        type = 'Chord';
+                    } else if (optgroup.label.includes('Interval')) {
+                        type = 'Interval';
+                    }
+                    diagramsToExport.push({
+                        name: option.value,
+                        text: option.textContent,
+                        type: type
+                    });
+                }
+            });
+        });
+        // Also include the "All Notes (Chromatic)" option
+        const chromaticOption = scaleSelect.querySelector('option[value="chromatic"]');
+        if (chromaticOption) {
+            diagramsToExport.unshift({ name: 'chromatic', text: chromaticOption.textContent, type: 'Scale' });
+        }
+        return diagramsToExport;
+    }
+
+    async function generateDiagramsForKeys(keysToExport) {
+        const zip = new window.JSZip();
+        const diagramsToExport = getDiagramList();
+
+        let totalProgress = 0;
+        const totalDiagrams = diagramsToExport.length * keysToExport.length;
+        
+        for (const key of keysToExport) {
+            // Programmatically set key for UI updates.
+            keySelect.value = key;
+            
+            const noteDisplaySelect = document.getElementById('note-display-type');
+            const noteDisplayText = noteDisplaySelect.options[noteDisplaySelect.selectedIndex].text;
+            const fretboardViewSelect = document.getElementById('fretboard-view-select');
+            const fretboardViewText = fretboardViewSelect.options[fretboardViewSelect.selectedIndex].text;
+            const tuningArray = getCurrentTuning();
+            const tuningText = [...tuningArray].reverse().join('');
+
+            for (const diagram of diagramsToExport) {
+                totalProgress++;
+                const keyProgress = keysToExport.length > 1 ? `Key: ${key} (${keysToExport.indexOf(key) + 1}/${keysToExport.length})` : `Key: ${key}`;
+                showExportStatus(`${keyProgress}\nGenerating diagram ${totalProgress} of ${totalDiagrams}\n${key} ${diagram.text}`);
+
+                scaleSelect.value = diagram.name;
+                updateNoteClasses();
+                updateCurrentSelectionDisplay();
+                
+                const notes = fretboard.querySelectorAll('.note');
+                const scaleNotes = getScaleNotes(key, diagram.name);
+                notes.forEach(note => {
+                    note.classList.toggle('visible', scaleNotes.includes(note.dataset.note));
+                });
+
+                await new Promise(resolve => setTimeout(resolve, 50));
+
+                try {
+                    const canvas = await html2canvas(fretboard, {
+                        scale: 2, // Higher resolution
+                        useCORS: true,
+                        backgroundColor: null // Transparent background
+                    });
+                    const imageData = canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
+                    const intervalString = getIntervalString(diagram.name);
+                    const cleanKeyFolder = key.replace('#', 's');
+                    
+                    const baseFilename = `${intervalString ? intervalString + ' - ' : ''}${diagram.type} - ${diagram.text} - ${noteDisplayText} - ${fretboardViewText} - ${tuningText} - ${getEnharmonicDisplay(key)}.jpg`;
+                    const cleanFilename = baseFilename.replace(/[/\\?%*:|"<>]/g, '-').replace('#', 's');
+                    
+                    const finalPath = keysToExport.length > 1 ? `${cleanKeyFolder}/${cleanFilename}` : cleanFilename;
+
+                    zip.file(finalPath, imageData, { base64: true });
+                } catch (error) {
+                    console.error(`Failed to capture diagram for ${diagram.text} in key ${key}:`, error);
+                }
+            }
+        }
+        return zip;
+    }
+
+    async function exportKeyDiagrams() {
+        const selectedKey = keySelect.value;
+        showExportStatus(`Preparing to export diagrams for key: ${getEnharmonicDisplay(selectedKey)}`);
+        const zip = await generateDiagramsForKeys([selectedKey]);
+        
+        showExportStatus('Zipping files...');
+
+        zip.generateAsync({ type: "blob" })
+            .then(function(content) {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = `Fretboard_Diagrams_${getEnharmonicDisplay(selectedKey)}_Key.zip`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                hideExportStatus();
+            });
+    }
+    
+    async function exportAllKeysDiagrams() {
+        showExportStatus('Preparing to export diagrams for all keys...');
+        const zip = await generateDiagramsForKeys(CHROMATIC_SCALE);
+
+        showExportStatus('Zipping all files...');
+
+        zip.generateAsync({ type: "blob" })
+            .then(function(content) {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = `Fretboard_Diagrams_All_Keys.zip`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                hideExportStatus();
+            });
+    }
+
+    exportKeyDiagramsBtn.addEventListener('click', exportKeyDiagrams);
+    exportAllKeysDiagramsBtn.addEventListener('click', exportAllKeysDiagrams);
 });
