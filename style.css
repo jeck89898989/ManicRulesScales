@@ -316,6 +316,7 @@ body.light-mode .string {
     background: linear-gradient(90deg, var(--fret-color), #ddd, var(--fret-color));
     border-right: 1px solid #666;
     z-index: 2;
+    transform: translateX(-50%); /* Center the fret bar on its left position */
 }
 
 body.light-mode .fret {
@@ -1232,8 +1233,8 @@ body.preset-chromatic-warm .note[data-note="C#"] { background-color: rgba(255, 6
 body.preset-chromatic-warm .note[data-note="D"] { background-color: rgba(255, 140, 0, 0.9) !important; }
 body.preset-chromatic-warm .note[data-note="D#"] { background-color: rgba(255, 215, 0, 0.9) !important; }
 body.preset-chromatic-warm .note[data-note="E"] { background-color: rgba(255, 255, 0, 0.9) !important; }
-body.preset-chromatic-warm .note[data-note="F"] { background-color: rgba(218, 165, 32, 0.9) !important; }
-body.preset-chromatic-warm .note[data-note="F#"] { background-color: rgba(184, 134, 11, 0.9) !important; }
+body.preset-chromatic-warm .note[data-note="F"] { background-color: rgba(184, 134, 11, 0.9) !important; }
+body.preset-chromatic-warm .note[data-note="F#"] { background-color: rgba(189, 183, 107, 0.9) !important; }
 body.preset-chromatic-warm .note[data-note="G"] { background-color: rgba(205, 133, 63, 0.9) !important; }
 body.preset-chromatic-warm .note[data-note="G#"] { background-color: rgba(210, 180, 140, 0.9) !important; }
 body.preset-chromatic-warm .note[data-note="A"] { background-color: rgba(189, 183, 107, 0.9) !important; }
@@ -1895,7 +1896,7 @@ body.terminal-mode .slideshow-controls {
 @media (max-width: 600px) {
     :root {
         --fretboard-height: 150px;
-        --note-size: 26px;
+        --note-size: 32px; /* Changed note size for better mobile tap target */
         padding: 10px;
         font-size: 14px;
     }

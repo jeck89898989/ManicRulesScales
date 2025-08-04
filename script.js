@@ -821,7 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
             { key: 'F', type: 'scale', name: 'lydian', title: 'F Lydian Scale', description: 'Major scale with a raised 4th.' },
             { key: 'G', type: 'chord', name: 'dom7', title: 'G7 (Mixolydian)', description: 'The Mixolydian chord. Bluesy, dominant sound.' },
             { key: 'G', type: 'scale', name: 'mixolydian', title: 'G Mixolydian Scale', description: 'Major scale with a flat 7th.' },
-            { key: 'A', type: 'chord', name: 'min7', title: 'Am7 (Aeolian)', description: 'The Aeolian chord. Natural minor, sad or serious.' },
+            { key: 'A', type: 'chord', name: 'min7', title: 'Am7 (Aeolian)', description: 'The vi chord. Use A Aeolian.' },
             { key: 'A', type: 'scale', name: 'aeolian', title: 'A Aeolian Scale', description: 'The natural minor scale.' },
             { key: 'B', type: 'chord', name: 'half-dim7', title: 'Bm7b5 (Locrian)', description: 'The Locrian chord. Tense and unstable.' },
             { key: 'B', type: 'scale', name: 'locrian', title: 'B Locrian Scale', description: 'The darkest mode, with a flat 2 and flat 5.' }
@@ -1448,7 +1448,9 @@ document.addEventListener('DOMContentLoaded', () => {
     for (let i = 1; i <= NUM_FRETS; i++) {
         const fret = document.createElement('div');
         fret.className = 'fret';
-        fret.style.left = `calc(${NUT_WIDTH_PX + (i / NUM_FRETS) * effectiveFretboardWidth - 5}px)`;
+        // Position the center of the fret bar at the end of the i-th fret space.
+        // The translateX(-50%) in CSS will center it correctly.
+        fret.style.left = `${NUT_WIDTH_PX + (i * (effectiveFretboardWidth / NUM_FRETS))}px`;
         fretboard.appendChild(fret);
     }
     
