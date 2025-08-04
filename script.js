@@ -67,9 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const controlsDiv = mainControlsContentDiv.querySelector('.controls');
     if (controlsDiv) {
         // Find the location of the new instrument select and insert after.
-        const numStringsSelectDiv = modalControlsContent.querySelector('.control-group[style*="display:none"]');
-        if (numStringsSelectDiv) {
-            numStringsSelectDiv.insertAdjacentElement('afterend', controlsDiv);
+        const instrumentSelectDiv = modalControlsContent.querySelector('.control-group');
+        if (instrumentSelectDiv) {
+            instrumentSelectDiv.insertAdjacentElement('afterend', controlsDiv);
         } else {
              modalControlsContent.appendChild(controlsDiv);
         }
@@ -291,6 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'gregorian-minor': [0, 2, 3, 5, 7, 8, 10],
         'blues-dorian': [0, 2, 3, 5, 6, 7, 9, 10],
         'blues-mixolydian': [0, 2, 3, 4, 5, 7, 9, 10],
+        'blues-phrygian': [0, 1, 3, 5, 6, 7, 8, 10],
         'diminished-blues': [0, 1, 3, 4, 5, 6, 7, 9, 10],
         'major-pentatonic-add-4': [0, 2, 4, 5, 7, 9],
         'minor-pentatonic-add-2': [0, 2, 3, 5, 7, 10],
@@ -877,7 +878,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'country-western': [
             { key: 'G', type: 'scale', name: 'major', title: 'Major Scale', description: 'The basis for most classic country songs.' },
             { key: 'G', type: 'scale', name: 'pentatonic-major', title: 'Major Pentatonic', description: 'The primary scale for country guitar licks.' },
-            { key: 'G', type: 'scale', name: 'blues', title: 'Blues Scale', description: 'Mixed with major pentatonic for a "hot" country sound.' }
+            { key: 'G', type: 'scale', name: 'blues', title: 'Blues Scale', description: 'Mixed with major pentatonic for a "hot" country sound.' },
+            { key: 'D', type: 'scale', name: 'mixolydian', title: 'Mixolydian Mode', description: 'The perfect scale to outline the V7 sound.' }
         ],
         'mediterranean': [
             { key: 'E', type: 'scale', name: 'phrygian-dominant', title: 'Phrygian Dominant', description: 'The quintessential Spanish and Flamenco sound.' },
@@ -1685,10 +1687,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    noteDisplayType.addEventListener('change', () => {
-        updateNoteDisplay();
-    });
-
     keySelect.addEventListener('change', () => {
         if (isQuizActive) {
             generateNewQuestion();
@@ -1924,41 +1922,23 @@ document.addEventListener('DOMContentLoaded', () => {
         stringControlsContainer.innerHTML = ''; // Clear existing controls
         const numStrings = TUNING.length;
 
-        TUNING.slice().reverse().forEach((note, index) => {
-            const originalIndex = TUNING.length - 1 - index;
+        TUNING.forEach((note, index) => {
             const stringControlDiv = document.createElement('div');
             stringControlDiv.className = 'string-control';
-            stringControlDiv.dataset.string = originalIndex;
+            stringControlDiv.dataset.string = index;
 
             const label = document.createElement('label');
              // Dynamic labels based on instrument type
-            const presetKey = instrumentSelect.value;
-            let stringNames = [];
-            if (presetKey.includes('guitar')) {
-                 stringNames = ['Low E', 'A', 'D', 'G', 'B', 'High E', 'Low B'];
-                 if (presetKey.includes('7')) {
-                     label.textContent = `${stringNames[index]} (${note}):`;
-                 } else {
-                     label.textContent = `${stringNames[index]} (${note}):`;
-                 }
-            } else if (presetKey.includes('bass')) {
-                stringNames = ['Low B', 'E', 'A', 'D', 'G'];
-                if (presetKey.includes('5')) {
-                    label.textContent = `${stringNames[index]} (${note}):`;
-                } else {
-                    label.textContent = `${stringNames[index + 1]} (${note}):`;
-                }
-            } else if (presetKey.includes('ukulele')) {
-                stringNames = ['G', 'C', 'E', 'A'];
-                label.textContent = `String ${stringNames[index]} (${note}):`;
-            }
-             else { // Default to string numbers
-                 label.textContent = `String ${TUNING.length - index} (${note}):`;
+            if (numStrings === 4 || numStrings === 5) { // Bass
+                label.textContent = `String ${index + 1} (${note}):`;
+            } else { // Guitar
+                 const guitarStringNames = ['High E', 'B', 'G', 'D', 'A', 'E', 'B'];
+                 label.textContent = `${guitarStringNames[index]} (${note}):`;
             }
 
             const tuningSelect = document.createElement('select');
             tuningSelect.className = 'tuning-select';
-            tuningSelect.dataset.string = originalIndex;
+            tuningSelect.dataset.string = index;
             ALL_NOTES.forEach(n => {
                 const option = document.createElement('option');
                 option.value = n;
@@ -1976,7 +1956,7 @@ document.addEventListener('DOMContentLoaded', () => {
             startFretInput.min = 0;
             startFretInput.max = 15;
             startFretInput.value = 0;
-            startFretInput.dataset.string = originalIndex;
+            startFretInput.dataset.string = index;
 
             const toSpan = document.createElement('span');
             toSpan.textContent = 'to';
@@ -1987,7 +1967,7 @@ document.addEventListener('DOMContentLoaded', () => {
             endFretInput.min = 0;
             endFretInput.max = 15;
             endFretInput.value = 15;
-            endFretInput.dataset.string = originalIndex;
+            endFretInput.dataset.string = index;
             
             [startFretInput, endFretInput].forEach(input => {
                 input.addEventListener('change', () => {
